@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "declaration": true,
+        "inlineSourceMap": true,
+        "experimentalDecorators": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "outDir": "./lib",
+        "lib": ["es6"],
+        "types": ["node"]
+    },
+    "files": [
+        "./src/index.ts"
+    ]
+
+}
