@@ -5,7 +5,7 @@
  *       output several errors at once.
  */
 
-import { Tokenizer, escape, SeparatedBy, Opt, Seq, Either, Forward, S, Rule, Repeat, Operator, Str, Res, NoMatch } from 'parseur'
+import { Tokenizer, escape, SeparatedBy, Opt, Seq, Either, Forward, S, Rule, Repeat, Operator, Str, Res, NoMatch, Token } from 'parseur'
 import * as ast from './ast'
 declare module 'parseur' {
   interface Rule<T> {
@@ -171,7 +171,7 @@ export class ZoeParser {
 
   TypeIdentifier = Seq(
     { name:         this.NamespacedIdentifier },
-    { arguments:    Forward(() => this.TypeArguments) },
+    { arguments:    Opt(Forward(() => this.TypeArguments)) },
     { traits:       Opt(Repeat(this.TraitIdentifier)) },
   )
 
@@ -300,6 +300,10 @@ export class ZoeParser {
     }
     // console.log(this)
   }
+
+  parse(input: string) {
+
+  }
 }
 
 
@@ -309,20 +313,29 @@ export function parse() {
 
 import * as fs from 'fs'
 import * as ch from 'chalk'
+import { inspect } from 'util'
 if (process.mainModule === module) {
   var parser = new ZoeParser()
 
   var tokens = tk.tokenize(fs.readFileSync(process.argv[2], 'utf-8'))
-  console.log(tokens?.filter(t => !!t.match[0].trim()).map(t => `${ch.gray(t.def._name + '<')}${ch.yellowBright(t.match[0].replace(/\n/g, '\\n'))}${ch.gray('>')}`).join(' '))
+  console.log(tokens?.map((t, i) => { return {t, i} }).filter(t => !!t.t.match[0].trim()).map(t => `${`${ch.gray(t.t.def._name)}:${t.i}<`}${ch.yellowBright(t.t.match[0].replace(/\n/g, '\\n'))}${ch.gray('>')}`).join(' '))
   // console.log('??')
   if (tokens) {
     var res = parser.Declarations.parse(tokens, 0)
 
-    if (res === NoMatch || res.pos !== tokens.length) {
+    var failed = true
+    if (res !== NoMatch) {
+      var pos = res.pos
+      var _tk: Token | undefined
+      while ((_tk = tokens[pos], _tk && _tk.is_skip)) { pos++ }
+      failed = !!_tk
+    }
+
+    if (res === NoMatch || failed) {
       console.log('Match failed')
       console.log(Res.max_res)
     } else {
-      console.log(res.res)
+      console.log(inspect(res.res, {depth: null}))
     }
   }
 }
