@@ -44,7 +44,7 @@ const T = {
     'and', 'or', 'in', 'is',
     'type', 'union', 'struct', 'enum', 'function',
     'true', 'false', 'void', 'null', 'stub'
-  ].map(t => escape(t)).join('|') + ')(?=\\b|[^\w])')).name('Control'),
+  ].map(t => escape(t)).join('|') + ')(?=\\b|[^\w]|$)')).name('Control'),
   // Now follow those that can vary.
   STR: tk.token(/(["'])(\\\1|(?!\1)[^])*\1/).name('String'),
   ID: tk.token(/[a-zA-Z$][\w$]*/).name('Id'),
@@ -227,7 +227,7 @@ export class ZoeParser {
               S`)`,
   )
 
-  UnionDefinition = SeparatedBy(Str('|'), this.TypeIdentifier, { leading: true })
+  UnionDefinition = SeparatedBy(Str('|'), Either(this.TypeIdentifier, this.TraitIdentifier), { leading: true })
 
   TypeDeclaration = Seq(
                 Str('type'),
@@ -318,7 +318,7 @@ if (process.mainModule === module) {
   var parser = new ZoeParser()
 
   var tokens = tk.tokenize(fs.readFileSync(process.argv[2], 'utf-8'))
-  console.log(tokens?.map((t, i) => { return {t, i} }).filter(t => !!t.t.match[0].trim()).map(t => `${`${ch.gray(t.t.def._name)}:${t.i}<`}${ch.yellowBright(t.t.match[0].replace(/\n/g, '\\n'))}${ch.gray('>')}`).join(' '))
+  console.log(tokens?.map((t, i) => { return {t, i} }).filter(t => !!t.t.match[0].trim()).map(t => `${ch.gray(`${t.t.def._name}:${t.i}<`)}${ch.yellowBright(t.t.match[0].replace(/\n/g, '\\n'))}${ch.gray('>')}`).join(' '))
   // console.log('??')
   if (tokens) {
     var res = parser.Declarations.parse(tokens, 0)
