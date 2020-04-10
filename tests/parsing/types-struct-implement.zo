@@ -1,0 +1,11 @@
+
+type S = struct (
+  field1: String
+  field2: Int64
+)
+
+implement S (
+  doStuff() -> String {
+
+  }
+)

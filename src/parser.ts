@@ -5,11 +5,20 @@
  *       output several errors at once.
  */
 
+import * as fs from 'fs'
+import * as pth from 'path'
+import * as ch from 'chalk'
+import { inspect } from 'util'
+
 import { Tokenizer, escape, SeparatedBy, Opt, Seq, Either, Forward, S, Rule, Repeat, Operator, Str, Res, NoMatch, Token } from 'parseur'
 import * as ast from './ast'
 declare module 'parseur' {
   interface Rule<T> {
     node<N extends ast.Node>(fn: (res: T) => N): Rule<N>
+  }
+
+  interface Token {
+    [inspect.custom]: () => any
   }
 }
 
@@ -21,11 +30,16 @@ Rule.prototype.node = function <N extends ast.Node, T>(this: Rule<T>, fn: (res: 
   })
 }
 
-const tk = new Tokenizer()
 
-const T = {
-  // Big, fat regexp for fixed length tokens
-  OP_KW: tk.token(new RegExp('(?:' + [
+Token.prototype[inspect.custom] = function () {
+    // return { value: this.match[0] , token: this.def._name }
+    return `${ch.grey('TK:')}${ch.grey(this.def._name + ':')}${ch.green(this.match[0])}`
+}
+
+
+export class ZoeParser extends Tokenizer {
+
+  CTRL = this.token(new RegExp('(?:' + [
     '=>', '==', '=',
     '...', '.',
     '::',
@@ -44,19 +58,16 @@ const T = {
     'and', 'or', 'in', 'is',
     'type', 'union', 'struct', 'enum', 'function',
     'true', 'false', 'void', 'null', 'stub'
-  ].map(t => escape(t)).join('|') + ')(?=\\b|[^\w]|$)')).name('Control'),
+  ].map(t => escape(t)).join('|') + ')(?=\\b|[^\w]|$)'))
   // Now follow those that can vary.
-  STR: tk.token(/(["'])(\\\1|(?!\1)[^])*\1/).name('String'),
-  ID: tk.token(/[a-zA-Z$][\w$]*/).name('Id'),
-  NUMBER: tk.token(/(0b|0o|0x)?\d[\d_]*(\.[\d_]+)/i).name('Number'),
-  DOCCOMMENT: tk.token(/([\n\s\r\t ]*#\?([^\n]*))+|#\(\?((?!#\))[^])*#\)/).skip().name('Doccomment'), // Skip it generally, except when we will need them
-  WS: tk.token(/(?:[\t\n\s ]|#\((?!\?)((?!)#\)[^])*#\)|#(?!\?)[^\n]*)+/).skip().name('WS') // Whitespace !
-}
+  STR = this.token(/(["'])(\\\1|(?!\1)[^])*\1/)
+  ID = this.token(/[a-zA-Z$][\w$]*/)
+  NUM = this.token(/(0b|0o|0x)?\d[\d_]*(\.[\d_]+)?/i)
+  DOC = this.token(/([\n\s\r\t ]*#\?([^\n]*))+|#\(\?((?!#\))[^])*#\)/).skip() // Skip it generally, except when we will need them
+  WS = this.token(/(?:[\t\n\s ]|#\((?!\?)((?!)#\)[^])*#\)|#(?!\?)[^\n]*)+/).skip() // Whitespace !
 
 
-export class ZoeParser {
-
-  Id = T.ID.node(r => ast.Id.create(r.match[0]))
+  Id = this.ID.node(r => new ast.Id(r.match[0]))
 
 
   NamespacedIdentifier = SeparatedBy(S`::`, this.Id)
@@ -70,7 +81,7 @@ export class ZoeParser {
       S`false`,
       S`null`,
       S`stub`
-    ).node(r => ast.LiteralExpression.create(r)),
+    ).node(r => new ast.LiteralExpression(r as any)),
     Forward(() => this.TypeIdentifier),
     Forward(() => this.TraitIdentifier)
   )
@@ -204,7 +215,7 @@ export class ZoeParser {
   FunctionSignature = Seq(
     { type_args:    Opt(this.TypeArguments) },
                   S`(`,
-    { args:         SeparatedBy(S`,`, this.FunctionDefinitionArgument) },
+    { args:         Opt(SeparatedBy(S`,`, this.FunctionDefinitionArgument, { trailing: true })) },
                   S`) ->`,
                     this.TypeIdentifier
   )
@@ -223,7 +234,7 @@ export class ZoeParser {
 
   StructDefinition = Seq(
               S`struct (`,
-    { fields:   SeparatedBy(Str(','), this.VariableDefinition, { trailing: true }) },
+    { fields:   SeparatedBy(Opt(Str(',')), this.VariableDefinition, { trailing: true }) },
               S`)`,
   )
 
@@ -257,6 +268,14 @@ export class ZoeParser {
     S`)`
   )
 
+  // IMPLEMENTATIONS
+
+  ImplementDeclaration = Seq(
+              Str('implement'),
+    { type:   this.NamespacedIdentifier },
+    { trait:  Opt(this.TraitIdentifier) },
+    { decls:  S`( ${Repeat(this.MethodDeclaration)} )` }
+  )
 
   // IMPORTS STATEMENT
 
@@ -264,7 +283,7 @@ export class ZoeParser {
 
   ImportIdentifiers = S`( ${SeparatedBy(S`,`, Either(this.Id, this.TraitName), { trailing: true })} )`
 
-  ImportStatementStart = S`import ${T.STR}`
+  ImportStatementStart = S`import ${this.STR}`
 
   ImportStatement = Seq(
     { module:     this.ImportStatementStart },
@@ -282,6 +301,7 @@ export class ZoeParser {
     this.FunctionDeclaration,
     this.VariableAssignmentExpression,
     this.TypeDeclaration,
+    this.ImplementDeclaration,
     // MISSING Constant declaration
   )
 
@@ -291,19 +311,65 @@ export class ZoeParser {
 
   Declarations: Rule<any> = Repeat(this.Declaration)
 
-  constructor() {
-    for (var key of Object.getOwnPropertyNames(this)) {
-      var p = (this as any)[key]
-      if (p instanceof Rule) {
-        p.name(key)
+  parse(input: string) {
+    var tokens = this.tokenize(input, true)
+    Res.max_res = null
+    // console.log('??')
+    if (tokens) {
+      var res = parser.Declarations.parse(tokens, 0)
+
+      var failed = true
+      if (res !== NoMatch) {
+        var pos = res.pos
+        var _tk: Token | undefined
+        while ((_tk = tokens[pos], _tk && _tk.is_skip)) { pos++ }
+        failed = !!_tk
+      }
+
+      if (res === NoMatch || failed) {
+        // console.log('Match failed')
+        return { status: 'nok', max_res: Res.max_res, tokens }
+        // console.log(Res.max_res)
+      } else {
+        return { status: 'ok', result: res.res }
+        // console.log(inspect(res.res, {depth: null}))
       }
     }
-    // console.log(this)
+    return { status: 'nok' }
   }
 
-  parse(input: string) {
-
+  constructor() {
+    super()
+    this.nameRules()
   }
+
+  testAll() {
+    const testpth = pth.join(__dirname, '../tests/parsing')
+    const files = fs.readdirSync(testpth, {encoding: 'utf-8' })
+
+    for (var f of files) {
+      const path = pth.join(testpth, f)
+      const basename = pth.basename(path)
+      const contents = fs.readFileSync(path, 'utf-8')
+      var res = this.parse(contents)
+
+      if (res.status === 'ok') {
+        console.log(`  ${ch.green('✓')} ${basename}`)
+      } else {
+        console.log(`  ${ch.bold.redBright('⛌')} ${basename}`)
+        if (res.tokens) console.log(res.tokens.map((tok, i) => { return {tok, i}})
+          .filter(t => !!t.tok.match[0].trim())
+          .map(t => `${ch.grey(`${t.tok.def._name}:${t.i} `)}${ch.greenBright(t.tok.match[0])} `)
+          .join(' ')
+        )
+        if (res.max_res) console.log(inspect(res.max_res, { depth: null, colors: true }))
+        break
+      }
+    }
+
+    // console.log(files)
+  }
+
 }
 
 
@@ -311,31 +377,9 @@ export function parse() {
 
 }
 
-import * as fs from 'fs'
-import * as ch from 'chalk'
-import { inspect } from 'util'
 if (process.mainModule === module) {
   var parser = new ZoeParser()
+  parser.testAll()
 
-  var tokens = tk.tokenize(fs.readFileSync(process.argv[2], 'utf-8'))
-  console.log(tokens?.map((t, i) => { return {t, i} }).filter(t => !!t.t.match[0].trim()).map(t => `${ch.gray(`${t.t.def._name}:${t.i}<`)}${ch.yellowBright(t.t.match[0].replace(/\n/g, '\\n'))}${ch.gray('>')}`).join(' '))
-  // console.log('??')
-  if (tokens) {
-    var res = parser.Declarations.parse(tokens, 0)
-
-    var failed = true
-    if (res !== NoMatch) {
-      var pos = res.pos
-      var _tk: Token | undefined
-      while ((_tk = tokens[pos], _tk && _tk.is_skip)) { pos++ }
-      failed = !!_tk
-    }
-
-    if (res === NoMatch || failed) {
-      console.log('Match failed')
-      console.log(Res.max_res)
-    } else {
-      console.log(inspect(res.res, {depth: null}))
-    }
-  }
+  // parser.parse(fs.readFileSync(process.argv[2], 'utf-8'))
 }

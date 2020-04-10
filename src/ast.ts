@@ -1,4 +1,6 @@
 import { Token } from "parseur"
+import { inspect } from 'util'
+import * as ch from 'chalk'
 
 
 export const enum T {
@@ -22,42 +24,40 @@ export function node<T, T2>(fn: <N extends Node>(res: T) => Partial<N>) {
 }
 
 
-export interface Node {
+export class Node {
   _range?: { input: Token[], start: number, end: number }
-  type: T
-}
+  type!: T
+  constructor() { }
 
+  static new<N extends Node, Args extends any[]>(this: {new (...args: Args): N}, ...a: Args) {
+    return new this(...a)
+  }
 
-export interface Id extends Node {
-  value: string
-}
-
-export namespace Id {
-  export function create(value: string): Id {
-    return { type: T.ID, value }
+  [inspect.custom]() {
+    return ch.grey(`<${this.type}>`)
   }
 }
 
-export interface Expression {
-  type: T.EXPRESSION
-  etype: E
+
+export class Id extends Node {
+  type: T.ID = T.ID
+  constructor(public value: string) {
+    super()
+  }
+}
+
+export class Expression extends Node {
+  type: T.EXPRESSION = T.EXPRESSION
   checked_type?: Type
 }
 
-export interface LiteralExpression extends Expression {
-  etype: E.LITERAL
-  value: 'void' | 'false' | 'true' | 'null'
-}
-
-
-export namespace LiteralExpression {
-  export function create(value: string): LiteralExpression {
-    return {
-      type: T.EXPRESSION, etype: E.LITERAL, value: value as any
-    }
+export class LiteralExpression extends Expression {
+  etype: E.LITERAL = E.LITERAL
+  constructor(public value: 'void' | 'false' | 'true' | 'null') {
+    super()
   }
-}
 
+}
 
 export interface Return extends Node {
   t: E.RETURN
