@@ -1,0 +1,2 @@
+function main() -> In32 =>
+  0 + 1

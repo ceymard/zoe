@@ -1,3 +1,7 @@
 function main() -> Void {
 
 }
+
+function main() -> Int32 {
+  return 1 * 4
+}
