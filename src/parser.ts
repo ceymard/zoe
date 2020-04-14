@@ -10,7 +10,7 @@ import * as pth from 'path'
 import * as ch from 'chalk'
 import { inspect } from 'util'
 
-import { Tokenizer, escape, SeparatedBy, Opt, Seq, Either, Forward, S, Rule, Repeat, Operator, Str, Res, NoMatch, Token, setDebug, DEBUG_MAP } from 'parseur'
+import { Tokenizer, escape, SeparatedBy, Opt, Seq, Either, Forward, S, Rule, Repeat, Operator, Str, Res, NoMatch, Token, setDebug } from 'parseur'
 import * as ast from './ast'
 declare module 'parseur' {
   interface Token {
@@ -22,9 +22,12 @@ setDebug()
 
 
 Token.prototype[inspect.custom] = function () {
-    // return { value: this.match[0] , token: this.def._name }
-    return `${ch.grey('TK:')}${ch.grey(this.def._name + ':')}${ch.green(this.match[0])}`
+    // return { value: this.match , token: this.def._name }
+    return `${ch.grey('TK:')}${ch.grey(this.def._name + ':')}${ch.green(this.str)}`
 }
+
+const mkbinop = ast.BinOpExpression.fromParse
+const mkunary = ast.UnaryExpression.fromParse
 
 
 export class ZoeParser extends Tokenizer {
@@ -59,59 +62,49 @@ export class ZoeParser extends Tokenizer {
 
   // FIXME set range !
   Id = this.ID.map(r => new ast.Id()
-    .set('value', r.match[0])
+    .set('value', r.str)
   )
 
 
   NamespacedIdentifier = SeparatedBy(S`::`, this.Id)
-    .map(r => new ast.NamespacedId()
-      .set('ids', r)
+    .map(r => new ast.NamespacedId(r))
+
+
+  //   Operator.UnaryRight(),
+  //   Str('@') // for trait access !
+  //   Str('.'),
+  //   Str('*', '/'),
+  //   Str('+', '-'),
+  //   Str('<<', '>>'),
+  //   Str('&', '|', '^'),
+  //   Str('<', '<=', '>', '>=', '==', '!='),
+  //   Str('and', 'or'),
+  //   Operator.UnaryLeft(Str('not')),
+  //   Operator.AssocRight(Str('=', '&=', '|=', '^=', '+=', '-=', '/=', '*='))
+  // )
+
+  Expression: Rule<ast.Expression> = Operator(
+      Forward(() => this.TerminalExpression)
     )
-
-
-  Expression: Rule<ast.Expression> = Either(
-    Forward(() => this.IfExpression),
-    Forward(() => this.OperatorExpression),
-    Forward(() => this.Block),
-  )
-
-
-  UnaryOp = Seq(
-    { op:       Either(S`-`, S`not`) }
-  )
-
-
-  TerminalExpression = Either(
-    S`( ${this.Expression} )`,
-    this.NamespacedIdentifier,
-    S`@ ${this.NamespacedIdentifier}`,
-    this.STR,
-    this.NUM,
-    Either(
-      S`void`,
-      S`true`,
-      S`false`,
-      S`null`,
-      S`stub`
-    ).map(r => new ast.LiteralExpression()
-      .set('value', r as any)
-    ), // FIXME range !
-  )
+    .prefix(10, Str('return'), mkunary)
+    // @ is both unary and binary !
+    .binary(90, Str('@'), mkbinop)
+    .binary(90, Str('.'), mkbinop)
+    .suffix(80, Forward(() => Either(this.FunctionCallExpression, this.TemplateCallExpression, this.ArrayAccess, this.SliceAccess)),
+      mkunary
+    )
+    .binary(70, Str('.'), mkbinop)
+    .binary(60, Str('*', '/'), mkbinop)
+    .binary(50, Str('+', '-'), mkbinop)
 
   FunctionCallExpression = S`( ${SeparatedBy(S`,`, this.Expression, { trailing: true })} )`
-    .map(args => new ast.FunctionCall()
-      .set('args', args)
-    )
+    .map(args => new ast.FunctionCall(args))
 
   TemplateCallExpression = S`< ${SeparatedBy(S`,`, this.Expression, { trailing: true })} ) >`
-    .map(args => new ast.TemplateCall()
-      .set('args', args)
-    )
+    .map(args => new ast.TemplateCall(args))
 
   ArrayAccess = S`[ ${Opt(this.Expression)} ]`
-    .map(expr => new ast.ArrayAccess()
-      .set('expr', expr)
-    )
+    .map(expr => new ast.ArrayAccess(expr))
 
   SliceAccess = S`[ ${Opt(this.Expression)} : ${Opt(this.Expression)} ]`
     .map(([start, end]) => new ast.SliceAccess()
@@ -119,18 +112,21 @@ export class ZoeParser extends Tokenizer {
       .set('end', end)
     )
 
-  OperatorExpression = Operator(
-    this.TerminalExpression,
-    Operator.UnaryRight(Either(this.FunctionCallExpression, this.TemplateCallExpression, this.ArrayAccess, this.SliceAccess)),
-    Str('.'),
-    Str('*', '/'),
-    Str('+', '-'),
-    Str('<<', '>>'),
-    Str('&', '|', '^'),
-    Str('<', '<=', '>', '>=', '==', '!='),
-    Str('and', 'or'),
-    Operator.UnaryLeft(Str('not')),
-    Operator.AssocRight(Str('=', '&=', '|=', '^=', '+=', '-=', '/=', '*='))
+
+  TerminalExpression: Rule<ast.Expression> = Either(
+    S`( ${this.Expression} )`,
+    this.NUM.map(s => new ast.NumberExpression(s.str)),
+    Forward(() => this.Block),
+    Forward(() => this.IfExpression),
+    this.NamespacedIdentifier,
+    this.STR.map(s => new ast.StringExpression(s.str)),
+    Either(
+      S`void`,
+      S`true`,
+      S`false`,
+      S`null`,
+      S`stub`
+    ).map(r => new ast.KeywordExpression(r as any)), // FIXME range !
   )
 
   VariableAssignmentExpression = Seq(
@@ -145,27 +141,21 @@ export class ZoeParser extends Tokenizer {
   ArrowExpression = S`=> ${this.Expression}`
 
   // A block is a sequence of expressions optionally separated by semicolons.
-  Block = S`{ ${SeparatedBy(Opt(Str(';')), this.Expression, { trailing: true, leading: true })} }`
+  Block = S`{ ${SeparatedBy(Repeat(Str(';')), this.Expression, { trailing: true, leading: true })} }`
   .map(r => new ast.Block()
     .set('expressions', r)
   )
 
+  // Used by both if statements or function definitions
   BlockOrArrow = Either(this.Block, this.ArrowExpression)
 
-  BlockOrExpression = Either(this.Block, this.Expression)
-
-
-  IfThenArm = Seq(
-    { condition:    this.Expression },
-    { instruction:  this.BlockOrArrow }
-  )
-
   IfExpression = Seq(
-                S`if`,
-    { then:       this.IfThenArm },
-    { elifs:      Repeat(S`elif ${this.IfThenArm}`) },
-    { else:       Opt(S`else ${this.BlockOrExpression}`) }
-  )
+                    S`if`,
+    { condition:    this.Expression },
+    { instruction:  this.BlockOrArrow },
+                // { elifs:      Repeat(S`elif ${this.IfThenArm}`) },
+    { else:         Opt(S`else ${Either(this.Block, this.Expression)}`) }
+  ).map(r => new ast.IfExpression(r.condition, r.instruction, r.else))
 
 
   ReturnExpression = Seq(
@@ -330,7 +320,7 @@ export class ZoeParser extends Tokenizer {
   Declarations: Rule<any> = Repeat(this.Declaration)
 
   parse(input: string) {
-    var tokens = this.tokenize(input, true)
+    var tokens = this.tokenize(input, { enable_line_counts: true, forget_skips: true })
     Res.max_res = null
     // console.log('??')
     if (tokens) {
@@ -384,8 +374,8 @@ export class ZoeParser extends Tokenizer {
       } else {
         console.log(`  ${ch.bold.redBright('⛌')} ${basename}`)
         if (res.tokens) console.log(res.tokens.map((tok, i) => { return {tok, i}})
-          .filter(t => !!t.tok.match[0].trim())
-          .map(t => `${ch.grey(`${t.tok.def._name}:${t.i} `)}${ch.greenBright(t.tok.match[0])} `)
+          .filter(t => !!t.tok.str.trim())
+          .map(t => `${ch.grey(`${t.tok.def._name}:${t.i} `)}${ch.greenBright(t.tok.str)} `)
           .join(' ')
         )
         if (res.max_res) {

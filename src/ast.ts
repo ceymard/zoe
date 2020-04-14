@@ -19,10 +19,15 @@ export const enum T {
 
 export const enum E {
   RETURN = 'return',
+  STR = 'string',
+  NUM = 'number',
   LITERAL = 'lit',
   BLOCK = 'block',
   ID = 'id',
   NMSP = 'nmspid',
+  IF = 'if',
+  BINOP = 'binop',
+  UNOP = 'unop',
 }
 
 
@@ -61,6 +66,20 @@ export class Node {
   }
 }
 
+export class Module {
+  declarations: Declaration[] = []
+}
+
+
+export class Declaration extends Node {
+  name: Id | undefined
+  definition: any // ??
+  attributes = new Set<'public'>()
+}
+
+export class TypeAliasDefinition extends Node {
+
+}
 
 export class VariableDefinition extends Node {
   type: T.VAR = T.VAR
@@ -94,7 +113,7 @@ export class Expression extends Node {
 }
 
 export class Id extends Expression {
-  etype: E.EXPRESSION = T.EXPRESSION
+  etype: T.EXPRESSION = T.EXPRESSION
   value: string = ''
 
   debug() { return [this.value] }
@@ -103,7 +122,8 @@ export class Id extends Expression {
 
 export class NamespacedId extends Expression {
   etype: E.NMSP = E.NMSP
-  ids: Id[] = []
+
+  constructor(public ids: Id[], public is_trait = false) { super() }
 
   debug() { return [this.ids.map(i).join('::')] }
 }
@@ -114,19 +134,21 @@ export class Operator extends Node {
 
 export class OperatorLiteral extends Operator {
   value: string = ''
+
+  constructor(v: string) { super(); this.value = v}
 }
 
 export class FunctionCall extends Operator {
-  args: Expression[] = []
+  constructor(public args: Expression[]) { super() }
 }
 
 export class TemplateCall extends Operator {
-  args: Expression[] = []
+  constructor(public args: Expression[]) { super() }
 }
 
 // Can also represent the array type definition
 export class ArrayAccess extends Operator {
-  expr: Expression | undefined
+  constructor(public expr: Expression | undefined) { super() }
 }
 
 export class SliceAccess extends Operator {
@@ -134,15 +156,33 @@ export class SliceAccess extends Operator {
   end: Expression | undefined
 }
 
-export const NoOperator = new OperatorLiteral().set('value', '#N/A')
+export const NoOperator = new OperatorLiteral('#N/A')
 
 // export class UnaryOperator extends
 
-export class BinOpExpression extends Expression {
-  op: Operator = NoOperator
-  lhs: Expression | undefined
-  rhs: Expression | undefined
+export class UnaryExpression extends Expression {
+  type: T.EXPRESSION = T.EXPRESSION
+  etype: E.UNOP = E.UNOP
+  static fromParse(op: string | Operator, operand: Expression) {
+    op = typeof op === 'string' ? new OperatorLiteral(op) : op
+    return new UnaryExpression(op, operand)
+  }
+
+  constructor(public op: Operator, public operand: Expression) { super() }
+
 }
+
+export class BinOpExpression extends Expression {
+  type: T.EXPRESSION = T.EXPRESSION
+  etype: E.BINOP = E.BINOP
+  static fromParse(op: string | Operator, lhs: Expression, rhs: Expression) {
+    op = typeof op === 'string' ? new OperatorLiteral(op) : op
+    return new BinOpExpression(op, lhs, rhs)
+  }
+
+  constructor(public op: Operator, public lhs: Expression, public rhs: Expression) { super( )}
+}
+
 
 export class Block extends Expression {
   type: T.EXPRESSION = T.EXPRESSION
@@ -150,9 +190,25 @@ export class Block extends Expression {
   expressions: Expression[] = []
 }
 
-export class LiteralExpression extends Expression {
+export class IfExpression extends Expression {
+  type: T.EXPRESSION = T.EXPRESSION
+  etype: E.IF = E.IF
+  constructor(public condition: Expression, public then: Expression, public els?: Expression) { super() }
+}
+
+export class StringExpression extends Expression {
+  etype: E.STR = E.STR
+  constructor(public value: string) { super() }
+}
+
+export class NumberExpression extends Expression {
+  etype: E.NUM = E.NUM
+  constructor(public value: string) { super() }
+}
+
+export class KeywordExpression extends Expression {
   etype: E.LITERAL = E.LITERAL
-  value: 'void' | 'false' | 'true' | 'null' | 'stub' = 'void'
+  constructor(public value: 'void' | 'false' | 'true' | 'null' | 'stub' = 'void') { super() }
 }
 
 export interface Return extends Node {
