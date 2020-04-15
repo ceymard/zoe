@@ -2,6 +2,6 @@ function main() -> Void {
 
 }
 
-function main() -> Int32 {
+function main2() -> Int32 {
   return 1 * 4
 }

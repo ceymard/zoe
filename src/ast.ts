@@ -1,10 +1,5 @@
 import { Token } from "parseur"
-import { inspect } from 'util'
 import * as ch from 'chalk'
-
-
-const i = (a: any) => inspect(a, { colors: true, depth: null })
-const C = inspect.custom
 
 
 export const enum T {
@@ -31,12 +26,6 @@ export const enum E {
 }
 
 
-export class Disp {
-  [C]() {
-
-  }
-}
-
 
 export class Node {
   _range?: { input: Token[], start: number, end: number }
@@ -56,18 +45,18 @@ export class Node {
     return ch.grey(`<${this.type}>`)
   }
 
-  debug(): any[] {
-    return []
+  debug(): string {
+    return this._debug().filter(f => !!f).map(f => f instanceof Node ? f.debug() : f).join(' ')
   }
 
-  [C]() {
-    return this.debug().filter(d => !!d)//.map(d => i(d))
-    // return ch.grey(`<${this.type} ${this.debug().filter(d => d != undefined).join(' ')}>`)
+  _debug(): (string | undefined | Node)[] {
+    return [this.constructor.name]
   }
 }
 
 export class Module {
   declarations: Declaration[] = []
+
 }
 
 
@@ -103,7 +92,18 @@ export class FunctionDefinition extends Node {
   return_type: Expression | undefined = undefined
   definition: Expression | undefined = undefined
 
-  debug() { return [i(this.name), i(this.type_args), i(this.args), i(this.return_type), i(this.definition)] }
+  _debug() {
+    return [
+      'function',
+      this.name,
+      ...(this.type_args ? ['<', ...this.type_args, '>'] : ['']),
+      '(', ...(this.args ?? []), ')',
+      '->',
+      this.return_type,
+      this.definition,
+      '\n'
+    ]
+  }
 
 }
 
@@ -116,8 +116,6 @@ export class Id extends Expression {
   etype: T.EXPRESSION = T.EXPRESSION
   value: string = ''
 
-  debug() { return [this.value] }
-
 }
 
 export class NamespacedId extends Expression {
@@ -125,7 +123,9 @@ export class NamespacedId extends Expression {
 
   constructor(public ids: Id[], public is_trait = false) { super() }
 
-  debug() { return [this.ids.map(i).join('::')] }
+  _debug() {
+    return [this.ids.map(i => i.value).join('::')]
+  }
 }
 
 export class Operator extends Node {
@@ -136,6 +136,10 @@ export class OperatorLiteral extends Operator {
   value: string = ''
 
   constructor(v: string) { super(); this.value = v}
+
+  debug() {
+    return this.value
+  }
 }
 
 export class FunctionCall extends Operator {
@@ -163,13 +167,16 @@ export const NoOperator = new OperatorLiteral('#N/A')
 export class UnaryExpression extends Expression {
   type: T.EXPRESSION = T.EXPRESSION
   etype: E.UNOP = E.UNOP
-  static fromParse(op: string | Operator, operand: Expression) {
+  static fromParse(op: string | Operator, operand: Expression, prefix = true) {
     op = typeof op === 'string' ? new OperatorLiteral(op) : op
-    return new UnaryExpression(op, operand)
+    return new UnaryExpression(op, operand, prefix)
   }
 
-  constructor(public op: Operator, public operand: Expression) { super() }
+  constructor(public op: Operator, public operand: Expression, public prefix = true) { super() }
 
+  _debug() {
+    return this.prefix ? [this.op, this.operand] : [this.operand, this.op]
+  }
 }
 
 export class BinOpExpression extends Expression {
@@ -181,6 +188,10 @@ export class BinOpExpression extends Expression {
   }
 
   constructor(public op: Operator, public lhs: Expression, public rhs: Expression) { super( )}
+
+  _debug() {
+    return [this.lhs, this.op, this.rhs]
+  }
 }
 
 
@@ -188,6 +199,12 @@ export class Block extends Expression {
   type: T.EXPRESSION = T.EXPRESSION
   etype: E.BLOCK = E.BLOCK
   expressions: Expression[] = []
+
+  _debug() {
+    return [
+      '{', ...this.expressions, '}'
+    ]
+  }
 }
 
 export class IfExpression extends Expression {
@@ -204,6 +221,7 @@ export class StringExpression extends Expression {
 export class NumberExpression extends Expression {
   etype: E.NUM = E.NUM
   constructor(public value: string) { super() }
+  debug() { return this.value }
 }
 
 export class KeywordExpression extends Expression {
