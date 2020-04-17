@@ -61,16 +61,36 @@ export class Module {
 
 
 export class Declaration extends Node {
-  name: Id | undefined
-  definition: any // ??
+  // name: NamespacedId | undefined
+  // definition: Definition | undefined // ??
   attributes = new Set<'public'>()
+
+  constructor(public name: NamespacedId, public definition: Definition) { super() }
+
+  _debug() {
+    return [this.name, this.definition]
+  }
 }
 
-export class TypeAliasDefinition extends Node {
+export class Definition extends Node {
 
 }
 
-export class VariableDefinition extends Node {
+export class TypeAliasDefinition extends Definition {
+
+}
+
+export class StructDefinition extends Definition {
+  constructor(public vars: VariableDefinition[]) { super() }
+}
+
+export class UnionDefinition extends Definition {
+  constructor(public types: Expression[]) { super() }
+
+  _debug() { return this.types }
+}
+
+export class VariableDefinition extends Definition {
   type: T.VAR = T.VAR
   name: Id | undefined
   typ: Expression | undefined
@@ -83,7 +103,7 @@ export class VariableDefinition extends Node {
  * This node is both a function definition and a signature
  * What differenciates the two is whether it has a definition
  */
-export class FunctionDefinition extends Node {
+export class FunctionDefinition extends Definition {
   type: T.FUNC = T.FUNC
 
   name: NamespacedId | undefined = undefined
@@ -116,6 +136,7 @@ export class Id extends Expression {
   etype: T.EXPRESSION = T.EXPRESSION
   value: string = ''
 
+  debug() { return this.value }
 }
 
 export class NamespacedId extends Expression {
@@ -148,6 +169,9 @@ export class FunctionCall extends Operator {
 
 export class TemplateCall extends Operator {
   constructor(public args: Expression[]) { super() }
+  _debug() {
+    return ['<', ...this.args, '>']
+  }
 }
 
 // Can also represent the array type definition
