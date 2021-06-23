@@ -48,6 +48,7 @@ export class Declaration extends Node {
     public definition: Definition
   ) {
       super(scope, range)
+      if (!this.name.is_an_error) scope.register(name, this)
   }
 
   local = false
@@ -93,13 +94,27 @@ export abstract class BinOp extends Expression {
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
-export class Loop extends Expression {
+export abstract class WhileExpression extends Expression {
   constructor(
-    public scope: Scope,
+    scope: Scope,
     range: lsp.Ranged,
     public cond: Expression,
-    public init?: Expression,
-    public step?: Expression,
+    public looped_exp: Expression,
+  ) { super(scope, range) }
+}
+
+export class While extends WhileExpression { }
+export class DoWhile extends WhileExpression { }
+
+
+export class For extends Expression {
+  constructor(
+    scope: Scope,
+    range: lsp.Ranged,
+    public key: Id | undefined,
+    public value: Id,
+    public iterator: Expression,
+    public block: Expression,
   ) { super(scope, range) }
 }
 
@@ -117,6 +132,7 @@ export class FnPrototype extends Expression {
   constructor(
     scope: Scope,
     range: lsp.Ranged,
+    public name: Id | undefined,
     public args: Expression[],
     public return_type: Expression | undefined,
   ) { super(scope, range) }
@@ -216,6 +232,7 @@ export class Literal extends Expression {
 
 export class Id extends Literal {
   is_an_error = false
+  setError() { this.is_an_error = true; return this }
 }
 export class Number extends Literal { }
 export class True extends Literal { }

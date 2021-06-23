@@ -44,6 +44,8 @@ export class File {
   doc_comments = new Map<A.Node, Token>()
   root_scope = new Scope(this)
 
+  declarations: A.Declaration[] = []
+
   diagnostics: lsp.Diagnostic[] = []
   has_errors = false
 

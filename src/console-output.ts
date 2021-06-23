@@ -14,7 +14,7 @@ set_printer(Token, function () {
 })
 
 
-let LB = ch.grey("{ ")
+let LB = ch.grey("{")
 let RB = ch.grey(" }")
 
 set_printer(Node as any, function () {
@@ -25,9 +25,9 @@ set_printer(Node as any, function () {
       case "range":
         continue
     }
-    prps.push(inspect(this[p], false, null, true))
+    prps.push(ch.grey(p) +": "+ inspect(this[p], false, null, true))
   }
-  return `${LB}${ch.red(this.constructor.name)}${prps.length ? " " + prps.join(" ") : ""}${RB}`
+  return `${ch.red(this.constructor.name)}${LB}${prps.length ? " " + prps.join(" ") : ""}${RB}`
 })
 
 
