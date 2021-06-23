@@ -1,0 +1,211 @@
+
+const T = require("./token-gen").T
+const Token = require("./token").Token
+const lsp = require("../lsp")
+
+exports.lex = function lex(str, pos) {
+  // str = str + '\x00' // inserting a null char
+  var cursor = pos.offset
+  var start = cursor
+
+  var line = pos.line
+  var col = pos.character
+
+  var state = 1 // starting state of re2c
+  var yych = -1
+  var yyaccept = 0
+  var _length = str.length
+  var _stored_pos = -1
+
+  function count(st, ed) {
+    while (st < ed) {
+      if (str.charCodeAt(st) === '\n') {
+        line++
+        col = 0
+      } else {
+        col++
+      }
+      st++
+    }
+  }
+
+  function emit_token(kind, include_text) {
+    var pos_start = new lsp.Position(line, col, start)
+    count(start, cursor)
+    var pos_end = new lsp.Position(line, col, cursor)
+
+    var tk = new Token(
+      kind,
+      pos_start,
+      pos_end
+    )
+
+    if (include_text) tk.value = str.slice(start, cursor)
+
+    return tk
+  }
+
+  function get_yychar() {
+    return cursor <= _length ? str.charCodeAt(cursor) : 0
+  }
+
+  /*!rules:re2c
+  // Global re2c definitions
+  re2c:flags:8 = 1;
+  re2c:define:YYCTYPE  = "var";
+  re2c:define:YYCURSOR = cursor;
+  re2c:define:YYPEEK = "get_yychar()";
+  re2c:define:YYSKIP = "++cursor";
+  re2c:define:YYRESTORE = "cursor = _stored_pos";
+  re2c:define:YYBACKUP = "_stored_pos = cursor";
+  re2c:define:YYLESSTHAN = "cursor >= _length";
+  re2c:define:YYSHIFTSTAG = "@@{tag} += @@{shift}";
+  re2c:tags:expression = "@@";
+  re2c:define:YYSTAGP = "@@{tag} = cursor";
+  re2c:eof = 0;
+  re2c:flags:input = custom;
+  re2c:api:style = free-form;
+
+  re2c:yyfill:enable = 0;
+  re2c:labelprefix = "case ";
+  re2c:indent:top = 2;
+  re2c:indent:string = "  ";
+  */
+
+  function in_comment(tk) {
+    var _cmt_count = 1
+    var state = 1
+    do {
+    switch (state)
+    /*!use:re2c
+      "#("   { _cmt_count++; state = 1; continue }
+      "#)"   { _cmt_count--; state = 1; if (_cmt_count === 0) { return emit_token(tk) } ; continue }
+      *      { state = 1; continue }
+      $      { return emit_token(tk, true) }
+    */
+    } while (true)
+  }
+
+  do {
+  switch (state)
+  /*!use:re2c
+      IdentLetter = [_a-zA-Z$];
+      Digit = [0-9];
+
+      Ident = IdentLetter (IdentLetter | [0-9_]) * ;
+      Number = Digit (Digit | "_")* ("." Digit (Digit | "_")*)?;
+
+      [ \t\n\r]+       { return emit_token(T.Space) }
+
+      ","              { return emit_token(T.Comma) }
+      "("              { return emit_token(T.LParen) }
+      ")"              { return emit_token(T.RParen) }
+      "["              { return emit_token(T.LBrace) }
+      "]"              { return emit_token(T.RBrace) }
+      "{"              { return emit_token(T.LBracket) }
+      "}"              { return emit_token(T.RBracket) }
+      "::"             { return emit_token(T.Cast) }
+      ":"              { return emit_token(T.Colon) }
+      ";"              { return emit_token(T.Semicolon) }
+      "..."            { return emit_token(T.Ellipsis) }
+      "=>"             { return emit_token(T.FatArrow) }
+      "->"             { return emit_token(T.Arrow) }
+
+      // _generate.js handles generating the RBP table
+
+      "="              { return emit_token(T.Assign) }
+      "||="            { return emit_token(T.AssignOr) }
+      "&&="            { return emit_token(T.AssignAnd) }
+      "+="             { return emit_token(T.AssignAdd) }
+      "-="             { return emit_token(T.AssignSub) }
+      "*="             { return emit_token(T.AssignMul) }
+      "/="             { return emit_token(T.AssignDiv) }
+      "%="             { return emit_token(T.AssignModulo) }
+      "&="             { return emit_token(T.AssignBitAnd) }
+      "|="             { return emit_token(T.AssignBitOr) }
+      "^="             { return emit_token(T.AssignXor) }
+
+      "<<"             { return emit_token(T.LShift) }
+      ">>"             { return emit_token(T.RShift) }
+
+      "@"              { return emit_token(T.At) }
+
+      "=="             { return emit_token(T.Equal) }
+      "!="             { return emit_token(T.Differ) }
+      ">="             { return emit_token(T.Gte) }
+      ">"              { return emit_token(T.Gt) }
+      "<="             { return emit_token(T.Lte) }
+      "<"              { return emit_token(T.Lt) }
+
+      "~"              { return emit_token(T.BitNot) }
+      "&"              { return emit_token(T.BitAnd) }
+      "^"              { return emit_token(T.BitXor) }
+      "|"              { return emit_token(T.BitOr) }
+
+      "!"              { return emit_token(T.Not) }
+      "&&"             { return emit_token(T.And) }
+      "||"             { return emit_token(T.Or) }
+
+      "*"              { return emit_token(T.Mul) }
+      "/"              { return emit_token(T.Div) }
+      "%"              { return emit_token(T.Modulo) }
+      "+"              { return emit_token(T.Add) }
+      "-"              { return emit_token(T.Sub) }
+
+      "is" [ \t]+ "not" { return emit_token(T.IsNot) }
+      "is"             { return emit_token(T.Is) }
+
+      "?."             { return emit_token(T.DotQuestion) }
+      "."              { return emit_token(T.Dot) }
+
+      "import"         { return emit_token(T.Import) }
+      "export"         { return emit_token(T.Export) }
+      "as"             { return emit_token(T.As) }
+      "local"          { return emit_token(T.Local) }
+      "extern"         { return emit_token(T.Extern) }
+
+      "if"             { return emit_token(T.If) }
+      "else"           { return emit_token(T.Else) }
+      "for"            { return emit_token(T.For) }
+      "while"          { return emit_token(T.While) }
+      "switch"         { return emit_token(T.Switch) }
+      "yield"          { return emit_token(T.Yield) }
+      "return"         { return emit_token(T.Return) }
+      "try"            { return emit_token(T.Try) }
+      "catch"          { return emit_token(T.Catch) }
+      "finally"        { return emit_token(T.Finally) }
+
+      "type"           { return emit_token(T.Type) }
+      "struct"         { return emit_token(T.Struct) }
+      "trait"          { return emit_token(T.Trait) }
+      "enum"           { return emit_token(T.Enum) }
+      "method"         { return emit_token(T.Method) }
+      "fn"             { return emit_token(T.Fn) }
+      "implements"     { return emit_token(T.Implements) }
+      "needs"          { return emit_token(T.Requires) }
+
+      "var"            { return emit_token(T.Var) }
+      "const"          { return emit_token(T.Const) }
+
+      "true"           { return emit_token(T.True) }
+      "false"          { return emit_token(T.False) }
+      "null"           { return emit_token(T.Null) }
+      "void"           { return emit_token(T.Void) }
+
+      "#(?"            { return in_comment(T.DocComment) }
+      "#("             { return in_comment(T.Comment) }
+      "#?" [^\n]*      { return emit_token(T.DocComment) }
+      "#!" [^\n]*      { return emit_token(T.PragmaComment) }
+      "#" [^\n]*       { return emit_token(T.Comment) }
+
+      Ident            { return emit_token(T.Ident, true) }
+      Number           { return emit_token(T.Number, true) }
+
+      * { return emit_token(T.Unexpected) }
+
+      $ { return emit_token(T.ZEof); }
+  */
+
+  } while (true)
+}
+

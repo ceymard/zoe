@@ -8,12 +8,9 @@
         "experimentalDecorators": true,
         "strict": true,
         "noUnusedLocals": true,
-        "outDir": "./lib",
+        "rootDir": "./src",
         "lib": ["es6"],
         "types": ["node"]
     },
-    "files": [
-        "./src/index.ts"
-    ]
 
 }
