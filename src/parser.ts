@@ -99,20 +99,20 @@ export class Parser extends ParserBase {
     let decls: A.Declaration[] = []
     let tk!: Token
     let decl: A.Node | undefined = undefined
-    do {
+    do scan: {
+      decl = undefined!
       tk = this.next()
 
       switch (tk.kind) {
         case T.Var:
         case T.Const:
+          decl = this.parseVariableDeclaration(scope, tk)
+          break
 
         case T.Fn:
           decl = this.parseFn(scope, tk)
           if (decl instanceof A.FnDefinition && decl.prototype.name) {
             decl = new A.Declaration(scope, decl, decl.prototype.name, decl)
-          } else {
-            this.file.report(decl, "expected a function declaration")
-            decl = undefined
           }
           break
         case T.Type:
@@ -122,12 +122,19 @@ export class Parser extends ParserBase {
 
         case T.Local:
         case T.Extern:
+
+          continue // FIXME
+
+        case T.ZEof:
+          break scan
       }
 
       if (decl instanceof A.Declaration)
         decls.push(decl)
+      else {
+        this.file.report(decl ?? tk, "expected a function declaration")
+      }
 
-      decl = undefined
     } while (tk.kind !== T.ZEof && (toplevel || tk.kind !== T.RBracket))
 
     return decls
@@ -139,10 +146,14 @@ export class Parser extends ParserBase {
     // Id (":" type: Expression)? ("=" default: Expression)?
 
     let id = this.expectId(scope)
+
+    // ( ":" <expression> )?
     let type_expression = this.consume(T.Colon, _ => {
-      return this.expression(scope, LBP[T.Equal]+1)
+      return this.expression(scope, LBP[T.Assign]+1)
     })
-    let def = this.consume(T.Equal, _ => {
+
+    // ( "=" <expression> )?
+    let def = this.consume(T.Assign, _ => {
       return this.expression(scope, 0)
     })
 
@@ -273,6 +284,9 @@ export class Parser extends ParserBase {
 
     switch (tk.kind) {
 
+      case T.Const:
+      case T.Var:     { res = this.parseVariableDeclaration(scope, tk); break }
+
       case T.Fn:      { res = this.parseFn(scope, tk); break }
       case T.If:      { res = this.parseIf(scope, tk); break }
       case T.For:     { res = this.parseFor(scope, tk); break }
@@ -300,7 +314,7 @@ export class Parser extends ParserBase {
     }
 
     let next_lbp!: number
-    let nxt = () => this.expression(scope, next_lbp)
+    let nxt = (add = -1) => this.expression(scope, next_lbp + add)
     // let nxt_min = () => this.expression(next_lbp - 1)
 
     do {
@@ -353,6 +367,12 @@ export class Parser extends ParserBase {
         case T.IsNot:         { res = new A.BinOpIsNot(scope, tk, res, nxt()); break }
         case T.DotQuestion:   { res = new A.BinOpDotQuestion(scope, tk, res, nxt()); break }
         case T.Dot:           { res = new A.BinOpDot(scope, tk, res, nxt()); break }
+
+        case T.LParen:        { res = new A.FnCall(scope, tk, res, this.parseGroup(scope, {
+          sep: T.Comma,
+          end: T.RParen,
+          allow_trailing: true,
+        }, _ => this.expression(scope, 0))); break }
 
         default:
           // this should never happend

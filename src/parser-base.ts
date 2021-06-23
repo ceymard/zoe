@@ -47,9 +47,9 @@ export class ParserBase {
     return nxt
   }
 
-  expect<N>(kind: T): void
+  expect<N>(kind: T): boolean
   expect<N>(kind: T, fn: (tk: Token) => N): N | ErrorNode
-  expect<N>(kind: T, fn?: (tk: Token) => N): N | ErrorNode | void {
+  expect<N>(kind: T, fn?: (tk: Token) => N): N | ErrorNode | void | boolean {
     let n = this.next()
     if (n.kind !== kind) {
       let message = `expected '${n.repr()}'`
@@ -57,7 +57,7 @@ export class ParserBase {
       if (fn) return new ErrorNode(n, message)
       return
     }
-    if (fn) return fn(n)
+    if (fn) { return fn(n) } else { return true }
   }
 
   /** Will advance the parser if the next token if of kind `kind` and optionally return the callback */
