@@ -1,6 +1,6 @@
 import { T } from "./lexer/token-gen"
 
-export const LBP: number[] = new Array(T.ZEof).fill(-1)
+export const LBP: number[] = new Array(T.ZEof + 1).fill(-1)
 let _prio = 10
 function _(...tk: T[]) {
   for (let t of tk) { LBP[t] = _prio }
@@ -39,5 +39,5 @@ _(T.Is, T.IsNot)        // is   is not
 _(T.At)                 // @
 _(T.LParen)             // call()
 _(T.Cast)               // ::
-_(T.LBracket)           // index[]
+_(T.LBrace)           // index[]
 _(T.Dot, T.DotQuestion) // . ?.

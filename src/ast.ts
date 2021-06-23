@@ -44,7 +44,7 @@ export class Declaration extends Node {
   constructor(
     scope: Scope,
     range: lsp.Ranged,
-    public name: string,
+    public name: Id,
     public definition: Definition
   ) {
       super(scope, range)
@@ -113,13 +113,21 @@ export class If extends Expression {
   ) { super(scope, range) }
 }
 
-export class FnDefinition extends Expression {
+export class FnPrototype extends Expression {
   constructor(
-    public scope: Scope,
+    scope: Scope,
     range: lsp.Ranged,
-    public name: string | undefined,
     public args: Expression[],
-    public return_type: Expression,
+    public return_type: Expression | undefined,
+  ) { super(scope, range) }
+}
+
+export class FnDefinition extends Definition {
+  constructor(
+    scope: Scope,
+    range: lsp.Ranged,
+    public prototype: FnPrototype,
+    public body: Expression[],
   ) { super(scope, range) }
 }
 
@@ -209,6 +217,7 @@ export class Literal extends Expression {
 export class Id extends Literal {
   is_an_error = false
 }
+export class Number extends Literal { }
 export class True extends Literal { }
 export class False extends Literal { }
 export class Null extends Literal { }

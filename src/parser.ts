@@ -7,7 +7,7 @@ import { T } from "./lexer/token-gen"
 import { LBP } from "./rbp"
 import { File, Scope } from "./scope"
 
-import * as out from "./console-output"
+import "./console-output"
 // import * as lsp from "./lsp"
 
 /////////////////////////////////////////////////
@@ -21,12 +21,45 @@ export class Parser extends ParserBase {
   //// Helper methods
   //////////////////////////////////////////////////////
 
-  parseGroup<T>(
+  /** Parse rules delimited by `opts.sep` and enclosed by `opts.start` and `opts.end`, allowing */
+  parseGroup<N>(
     scope: Scope,
-    opts: { end?: T, sep?: T | null, allow_leading?: boolean, allow_trailing?: boolean },
-    builder: (scope: Scope, tk: Token) => T
-  ): T[] {
+    opts: { start?: T, end?: T, sep?: T | null, allow_leading?: boolean, allow_trailing?: boolean },
+    builder: (scope: Scope, tk: Token) => N
+  ): N[] {
+    let sep = opts.sep
+    let end = opts.end
+    let res: N[] = []
 
+    if (opts.start) this.expect(opts.start)
+    if (sep && opts.allow_leading) this.consume(sep)
+
+    let tk: Token
+    do {
+      tk = this.peek()
+      if (tk.kind === T.ZEof || tk.kind === end) { this.next(); break }
+      res.push(builder(scope, tk))
+      if (sep) {
+        let pk = this.peek()
+        if (pk.kind === end || pk.kind === T.ZEof) continue
+        this.expect(sep)
+      }
+    } while (true)
+
+    if (end && tk.kind !== end) {
+      this.file.report(tk, `unexpected ${tk.repr()}`)
+    }
+
+    return res
+  }
+
+  consumeId(scope: Scope): A.Id | undefined {
+    let tk = this.next()
+    if (tk.kind !== T.Ident) {
+      this.rewind()
+      return
+    }
+    return new A.Id(scope, tk, tk.value)
   }
 
   expectId(scope: Scope, rewind_on_error = false): A.Id {
@@ -46,19 +79,22 @@ export class Parser extends ParserBase {
   //// Real parsing methods
   //////////////////////////////////////////////////////
 
-  parseNamespace(toplevel = false) {
+  parseNamespace(scope: Scope, toplevel = false) {
     let decls: A.Declaration[] = []
-
-    let nxt!: Token
+    let dbg: Token[] = []
+    let tk!: Token
+    let decl: A.Declaration | undefined
     do {
-      nxt = this.next()
-      out.printToken(nxt)
-      // console.log(nxt.repr())
-      switch (nxt.kind) {
+      tk = this.next()
+      dbg.push(tk)
+      switch (tk.kind) {
         case T.Var:
         case T.Const:
 
         case T.Fn:
+          decl = this.parseNudFn(scope, tk)
+          console.log(decl)
+          break
         case T.Type:
 
         case T.Import:
@@ -67,7 +103,8 @@ export class Parser extends ParserBase {
         case T.Local:
         case T.Extern:
       }
-    } while (nxt.kind !== T.ZEof && (toplevel || nxt.kind !== T.RBracket))
+    } while (tk.kind !== T.ZEof && (toplevel || tk.kind !== T.RBracket))
+    console.log(dbg)
   }
 
   /** Parse a var / const statement */
@@ -121,13 +158,35 @@ export class Parser extends ParserBase {
 
   }
 
-  parseFnPrototype(scope: Scope, tk: Token) {
-    // tk is the "fn" token.
+  // expects that we land here on the opening statement
+  parseFnPrototype(scope: Scope, tk: Token): A.FnPrototype | A.FnDefinition {
+    let sub = scope.subScope()
+    let args = this.parseGroup(sub, {
+      start: T.LParen,
+      end: T.RParen,
+      sep: T.Comma,
+      allow_trailing: true,
+    }, (scope, tk): A.Expression => this.expression(scope, LBP[T.Comma] + 1)) // FIXME should be parse variable !
 
+    let rettype = this.consume(T.Arrow, tk => this.expression(scope, LBP[T.Assign] + 1))
+
+    let proto = new A.FnPrototype(scope, tk, args, rettype)
+
+    let body = this.consume(T.LBracket, tk => {
+      return this.parseGroup(sub, {
+        end: T.LBracket
+      }, (scope, tk) => this.expression(scope, 0))
+    })
+
+    if (body) return new A.FnDefinition(scope, tk, proto, body)
+    return proto
   }
 
-  parseNudFn(scope: Scope, tk: Token): A.FnDefinition {
-    let id = this.expect(T.Ident, _ => scope.file.getRangedText(_))
+  parseNudFn(scope: Scope, tk: Token): A.Declaration | A.FnPrototype | A.FnDefinition {
+    let id = this.consumeId(scope)
+    let proto = this.parseFnPrototype(scope, tk)
+    if (!id) return proto
+    return new A.Declaration(scope, tk, id, proto)
   }
 
   parseNudIf(scope: Scope, tk: Token): A.If {
@@ -177,17 +236,18 @@ export class Parser extends ParserBase {
 
     switch (tk.kind) {
 
-      case T.For:   { res = this.parseNudFor(scope, tk); break }
-      case T.Fn:    { res = this.parseNudFn(scope, tk); break }
-      case T.If:    { res = this.parseNudIf(scope, tk); break }
+      case T.For:     { res = this.parseNudFor(scope, tk); break }
+      case T.Fn:      { res = this.parseNudFn(scope, tk); break }
+      case T.If:      { res = this.parseNudIf(scope, tk); break }
 
-      case T.Ident: { res = new A.Id(scope, tk, tk.getText(this.file_contents)); break }
-      case T.False: { res = new A.False(scope, tk, "false"); break }
-      case T.True:  { res = new A.True(scope, tk, "true"); break }
-      case T.Null:  { res = new A.Null(scope, tk, "null"); break }
-      case T.Void:  { res = new A.Void(scope, tk, "void"); break }
+      case T.Number:  { res = new A.Number(scope, tk, tk.value); break }
+      case T.Ident:   { res = new A.Id(scope, tk, tk.value); break }
+      case T.False:   { res = new A.False(scope, tk, "false"); break }
+      case T.True:    { res = new A.True(scope, tk, "true"); break }
+      case T.Null:    { res = new A.Null(scope, tk, "null"); break }
+      case T.Void:    { res = new A.Void(scope, tk, "void"); break }
 
-      case T.At:    { res = new A.UnaOpRef(scope, tk, this.expression(scope, LBP[T.At])); break }
+      case T.At:      { res = new A.UnaOpRef(scope, tk, this.expression(scope, LBP[T.At])); break }
 
       default:
         let message = `unexpected`
@@ -256,7 +316,7 @@ export class Parser extends ParserBase {
 
         default:
           // this should never happend
-          throw new Error(`parser implementation error: unhandled token in operator expression`)
+          throw new Error(`parser implementation error: unhandled token '${tk.repr()}' in operator expression`)
       }
 
     } while (true)
@@ -270,6 +330,6 @@ if (process.mainModule === module) {
     const fs = require("fs") as typeof import("fs")
     const file = new File(a, fs.readFileSync(a, "utf-8"))
     let p = new Parser(file)
-    p.parseNamespace(true)
+    p.parseNamespace(file.root_scope, true)
   }
 }
