@@ -3,13 +3,37 @@ const T = require("./token-gen").T
 const Token = require("./token").Token
 const lsp = require("../lsp")
 
-exports.lex = function lex(str, pos) {
-  // str = str + '\x00' // inserting a null char
-  var cursor = pos.offset
-  var start = cursor
+exports.Lexer = class Lexer {
+  constructor(str) {
+    this.str = str
+  }
 
-  var line = pos.line
-  var col = pos.character
+  line = 0
+  character = 0
+  offset = 0
+
+  last_line = 0
+  last_character = 0
+  last_offset = 0
+
+  rewind() {
+    this.line = this.last_line
+    this.character = this.last_character
+    this.offset = this.last_offset
+  }
+
+next() {
+  // str = str + '\x00' // inserting a null char
+  var str = this.str
+  var cursor = this.offset
+  var start = cursor
+  var line = this.line
+  var col = this.character
+
+  this.last_character = col
+  this.last_line = line
+  this.last_offset = start
+
 
   var state = 1 // starting state of re2c
   var yych = -1
@@ -29,7 +53,7 @@ exports.lex = function lex(str, pos) {
     }
   }
 
-  function emit_token(kind, include_text) {
+  const emit_token = (kind, include_text) => {
     var pos_start = new lsp.Position(line, col, start)
     count(start, cursor)
     var pos_end = new lsp.Position(line, col, cursor)
@@ -41,6 +65,10 @@ exports.lex = function lex(str, pos) {
     )
 
     if (include_text) tk.value = str.slice(start, cursor)
+
+    this.line = line
+    this.character = col
+    this.offset = cursor
 
     return tk
   }
@@ -209,5 +237,7 @@ exports.lex = function lex(str, pos) {
   */
 
   } while (true)
+}
+
 }
 

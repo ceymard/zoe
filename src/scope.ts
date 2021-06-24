@@ -54,12 +54,12 @@ export class File {
     public contents: string,
   ) { }
 
-  getRangedText(
-    rng: lsp.Ranged,
-  ) {
-    let r = rng.getRange()
-    return this.contents.slice(r.start.offset, r.end.offset)
-  }
+  // getRangedText(
+  //   rng: lsp.Ranged,
+  // ) {
+  //   let r = rng.getRange()
+  //   return this.contents.slice(r.start.offset, r.end.offset)
+  // }
 
   /** Report a diagnostic to either later print on terminal or to send back to the LSP client */
   report(

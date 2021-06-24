@@ -6,10 +6,14 @@ export interface Ranged {
 }
 
 export class Position {
-  constructor(public line: number, public character: number, public offset: number) { }
+  constructor(
+    public line: number,
+    public character: number,
+    // public offset: number
+  ) { }
 
   getRange() {
-    return new Range(this, new Position(this.line, this.character + 1, this.offset + 1))
+    return new Range(this, new Position(this.line, this.character + 1))
   }
 
   /** used to communicate with LSP */
@@ -41,9 +45,9 @@ export class Range {
     }
   }
 
-  getText(str: string) {
-    return str.slice(this.start.offset, this.end.offset)
-  }
+  // getText(str: string) {
+    // return str.slice(this.start.offset, this.end.offset)
+  // }
 }
 
 export class Location {

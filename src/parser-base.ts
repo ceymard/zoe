@@ -1,6 +1,6 @@
 
 import * as lsp from "./lsp"
-import { lex } from "./lexer"
+import { Lexer } from "./lexer"
 import { Token } from "./lexer/token"
 import { T } from "./lexer/token-gen"
 import { File } from "./scope"
@@ -17,6 +17,8 @@ export class ParserBase {
   constructor(
     public file: File,
   ) { }
+
+  lexer = new Lexer(this.file.contents)
 
   file_contents = this.file.contents
 
@@ -83,11 +85,8 @@ export class ParserBase {
       return this.last_token
     }
 
-    let lst = this.last_token
-    let pos = lst ? lst.end : new lsp.Position(0, 0, 0)
     let tk: Token
-    while ((tk = lex(this.file_contents, pos))) {
-      pos = tk.end
+    while ((tk = this.lexer.next())) {
       if (!tk.isSkippable()) break
     }
     this.last_token = tk

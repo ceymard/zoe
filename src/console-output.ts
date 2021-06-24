@@ -32,5 +32,5 @@ set_printer(Node as any, function () {
 
 
 export function printDiagnostic(file: File, diag: lsp.Diagnostic) {
-  console.log(`  ${ch.grey(file.uri)} ${ch.green(diag.range.start.line + 1)} ${diag.message}`)
+  console.log(`${ch.grey(file.uri)} ${ch.green(diag.range.start.line + 1)} ${diag.message}`)
 }

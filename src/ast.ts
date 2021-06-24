@@ -1,9 +1,9 @@
 // import { Token } from "./lexer/token"
 // import * as ch from 'chalk'
-import { Token } from "./lexer/token"
-import { T } from "./lexer/token-gen"
+// import { Token } from "./lexer/token"
+// import { T } from "./lexer/token-gen"
 import { Scope } from "./scope"
-import * as Y from "./types"
+// import * as Y from "./types"
 import * as lsp from "./lsp"
 
 const sym_range = Symbol("range")
@@ -20,7 +20,7 @@ export abstract class Node implements lsp.Ranged {
     this.range = ranged.getRange()
   }
 
-  getText(str: string) { return this.range.getText(str) }
+  // getText(str: string) { return this.range.getText(str) }
 
   getRange(): lsp.Range {
     let rng = this[sym_range]

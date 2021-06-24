@@ -75,7 +75,7 @@ export class Parser extends ParserBase {
 
   expectId(scope: Scope, rewind_on_error = false): A.Id {
     let tk = this.next()
-    let id = new A.Id(scope, tk, this.file.getRangedText(tk))
+    let id = new A.Id(scope, tk, tk.value)
     if (tk.kind !== T.Ident) {
       let message = `expected an identifier`
       if (rewind_on_error) this.rewind()
@@ -99,9 +99,11 @@ export class Parser extends ParserBase {
     let decls: A.Declaration[] = []
     let tk!: Token
     let decl: A.Node | undefined = undefined
+    let last_error = -1
     do scan: {
       decl = undefined!
       tk = this.next()
+      // console.log(tk)
 
       switch (tk.kind) {
         case T.Var:
@@ -129,10 +131,12 @@ export class Parser extends ParserBase {
           break scan
       }
 
-      if (decl instanceof A.Declaration)
+      if (decl instanceof A.Declaration) {
         decls.push(decl)
-      else {
-        this.file.report(decl ?? tk, "expected a function declaration")
+      } else {
+        let rn = (decl ?? tk).getRange()
+        if (rn.start.line > last_error) this.file.report(decl ?? tk, "expected a declaration")
+        last_error = rn.start.line
       }
 
     } while (tk.kind !== T.ZEof && (toplevel || tk.kind !== T.RBracket))
@@ -386,17 +390,23 @@ export class Parser extends ParserBase {
 
 
 if (process.mainModule === module) {
+  let now = Date.now()
   for (let a of process.argv.slice(2)) {
-    const fs = require("fs") as typeof import("fs")
-    const file = new File(a, fs.readFileSync(a, "utf-8"))
-    let p = new Parser(file)
-    p.parse()
-    // p.parseNamespace(file.root_scope, true)
+    try {
+      const fs = require("fs") as typeof import("fs")
+      const file = new File(a, fs.readFileSync(a, "utf-8"))
+      let p = new Parser(file)
+      p.parse()
+      // p.parseNamespace(file.root_scope, true)
 
-    const out = require("./console-output") as typeof import("./console-output")
-    for (let d of p.file.diagnostics) {
-      out.printDiagnostic(p.file, d)
+      const out = require("./console-output") as typeof import("./console-output")
+      for (let d of p.file.diagnostics) {
+        out.printDiagnostic(p.file, d)
+      }
+      console.log(file.declarations)
+    } catch (e) {
+      console.error(e)
     }
-    console.log(file.declarations)
   }
+  console.log(Date.now() - now)
 }
