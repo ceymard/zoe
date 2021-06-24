@@ -394,8 +394,8 @@ if (process.mainModule === module) {
   for (let a of process.argv.slice(2)) {
     try {
       const fs = require("fs") as typeof import("fs")
-      const file = new File(a, fs.readFileSync(a, "utf-8"))
-      let p = new Parser(file)
+      const file = new File(a)
+      let p = new Parser(file, fs.readFileSync(a, "utf-8"))
       p.parse()
       // p.parseNamespace(file.root_scope, true)
 
@@ -403,7 +403,7 @@ if (process.mainModule === module) {
       for (let d of p.file.diagnostics) {
         out.printDiagnostic(p.file, d)
       }
-      console.log(file.declarations)
+      // console.log(file.declarations)
     } catch (e) {
       console.error(e)
     }

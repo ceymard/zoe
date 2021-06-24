@@ -51,7 +51,7 @@ export class File {
 
   constructor(
     public uri: lsp.DocumentURI,
-    public contents: string,
+    // public contents: string,
   ) { }
 
   // getRangedText(

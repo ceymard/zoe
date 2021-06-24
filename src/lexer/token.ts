@@ -27,6 +27,7 @@ export class Token2 extends lsp.Range {
 
   nud() { }
   led() { }
+
 }
 
 export class ValueToken extends Token2 {

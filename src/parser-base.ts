@@ -1,5 +1,4 @@
 
-import * as lsp from "./lsp"
 import { Lexer } from "./lexer"
 import { Token } from "./lexer/token"
 import { T } from "./lexer/token-gen"
@@ -16,11 +15,12 @@ export class ParserBase {
 
   constructor(
     public file: File,
-  ) { }
+    contents: string,
+  ) {
+    this.lexer = new Lexer(contents)
+  }
 
-  lexer = new Lexer(this.file.contents)
-
-  file_contents = this.file.contents
+  lexer: Lexer
 
   reset() {
     this.last_token = undefined!
