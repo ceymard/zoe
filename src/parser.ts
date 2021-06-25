@@ -21,12 +21,24 @@ export class Parser extends ParserBase {
   //// Helper methods
   //////////////////////////////////////////////////////
 
+  parseTypeRef(scope: Scope) {
+    return this.expression(scope, LBP[T.LBrace])
+  }
+
   expectCondition(scope: Scope, tk: Token) {
     return this.expect(T.LParen, () => {
       let xp = this.expression(scope, 0)
       this.expect(T.RParen)
       return xp
     }) ?? new A.ErrorNode(tk, "no condition")
+  }
+
+  parseParenExp<N>(scope: Scope, builder: (scope: Scope, tk: Token) => N) {
+    return this.parseGroup(scope, {
+      start: T.LParen,
+      end: T.RParen,
+      sep: T.Comma,
+    }, builder)
   }
 
   /** Parse rules delimited by `opts.sep` and enclosed by `opts.start` and `opts.end`, allowing */
@@ -184,7 +196,16 @@ export class Parser extends ParserBase {
   }
 
   parseDefTrait(scope: Scope, tk: Token) {
+    let id = this.expectId(scope)
+    // FIXME let generics = ...
 
+    let [has, needs] = this.consumeInAnyOrder(
+      [T.Has, _ => this.parseParenExp(scope, _ => this.parseTypeRef(scope))],
+      [T.Needs, _ => this.parseParenExp(scope, _ => this.parseTypeRef(scope))]
+    )
+
+    let methods = this.parseParenExp(scope, _ => this.expect(T.Method, _ => this.parseFn(scope, tk)))
+    console.log("??")
   }
 
   parseDefUnion(scope: Scope, tk: Token) {

@@ -208,11 +208,11 @@ next() {
       "type"           { return emit_token(T.Type) }
       "struct"         { return emit_token(T.Struct) }
       "trait"          { return emit_token(T.Trait) }
+      "has"            { return emit_token(T.Has) }
+      "needs"          { return emit_token(T.Needs) }
       "enum"           { return emit_token(T.Enum) }
       "method"         { return emit_token(T.Method) }
       "fn"             { return emit_token(T.Fn) }
-      "implements"     { return emit_token(T.Implements) }
-      "needs"          { return emit_token(T.Requires) }
 
       "var"            { return emit_token(T.Var) }
       "const"          { return emit_token(T.Const) }

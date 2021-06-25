@@ -49,9 +49,9 @@ export class ParserBase {
     return nxt
   }
 
-  expect<N>(kind: T): boolean
-  expect<N>(kind: T, fn: (tk: Token) => N): N | ErrorNode
-  expect<N>(kind: T, fn?: (tk: Token) => N): N | ErrorNode | void | boolean {
+  expect<N>(kind: T | Set<T>): boolean
+  expect<N>(kind: T | Set<T>, fn: (tk: Token) => N): N | ErrorNode
+  expect<N>(kind: T | Set<T>, fn?: (tk: Token) => N): N | ErrorNode | void | boolean {
     let n = this.next()
     if (n.kind !== kind) {
       let message = `expected '${n.repr()}'`
@@ -72,6 +72,13 @@ export class ParserBase {
       return
     }
     return fn ? fn(n) : n
+  }
+
+  consumeInAnyOrder<A extends [T, (tk: T) => any][]>(...a: A): {[K in keyof A]: A[K] extends [T, (tk: T) => infer U] ? U | undefined : never} {
+    let arr: ((_: T) => any)[]
+    let indices = new Map<number, number>()
+
+    // for ()
   }
 
   commit() {
