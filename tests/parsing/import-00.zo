@@ -1,0 +1,2 @@
+import "std/collections" as col
+import "std/collections" (#compare, Map)

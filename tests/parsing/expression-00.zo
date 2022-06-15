@@ -1,0 +1,10 @@
+fn main() -> Int32 {
+  fn toto() {  }
+  fn toto() {  }
+
+  0 + 1 + 2
+  5 + 9
+  e = fn (a, b, ) -> String { 33 }
+
+  for (toto, titi in exp()) { dostuff() }
+}

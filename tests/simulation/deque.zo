@@ -1,0 +1,117 @@
+/*?
+  It is also possible to have a Deque use a classical array
+*/
+struct ArrayDeque[$T](
+  head: Int,
+  tail: Int,
+  local arr: []$T,
+)
+is Iterable[$T]
+{
+  fn new(capacity: UInt) -> ArrayDeque[$T] {
+    return ArrayDeque[$T](head = 0, tail = 0, arr = [capacity]$T)
+  }
+
+  /*?
+    Regrow the internal array to a new capacity, copying the elements
+  */
+  local fn regrow(this, target: UInt) {
+
+  }
+
+  fn get(idx: Int) -> ArrayDeque[$T] | OutOfBoundsError {
+
+  }
+  # ...
+}
+
+/*?
+  The Deque is a doubly linked-list which allows for O(1) insertion and retrieval
+  of head and tail position elements.
+*/
+struct Deque[$T](
+  head: @Element | null,
+  tail: @Element | null,
+  count: UInt = 0,
+) is Iterable[$T] {
+
+  struct Element(
+    value: $T,
+    next: @Element | null,
+    prev: @Element | null,
+  )
+
+  /*?
+    The default iterator on the deque
+  */
+  #Iterable[$T] fn iterator(this) -> #Iterable.Iterator[$T] {
+    var iter = this.head
+    // Count iterator is more interesting because it allows for creating arrays that do not need to grow
+    return #Iterable.countIterator(this.count, while (iter != null) {
+      yield iter.value
+      iter = iter.next
+    })
+  }
+
+  fn reverseIterator(this) -> #Iterable.Iterator[$T] {
+    var iter = this.tail
+    return while (iter != null) {
+      yield iter.value
+      iter = iter.prev
+    }
+  }
+
+  local fn _add[$head is Boolean](this, value: $T) -> @This {
+    if (this.head == null) {
+      this.head = this.tail = @Element(value)
+    } else {
+      var elt = @Element(value)
+      if ($head) {
+        elt.next = this.head
+        this.head.prev = elt
+        this.head = elt
+      } else {
+        elt.prev = this.tail
+        this.tail.next = elt
+        this.tail = elt
+      }
+    }
+    this.count++
+    return this
+  }
+
+  fn push = _add[false]
+  fn unshift = _add[true]
+
+  /*?
+    Pop a value from the end of the deque
+  */
+  fn pop(this) -> $T | null {
+    var tail = this.tail
+    if (tail is not null) {
+      var res = tail.value
+      this.tail = tail.prev
+      this.tail.next = null
+      if (this.tail is null) this.head = null
+      this.count--
+      return res
+    }
+    return null
+  }
+
+  fn shift(this, value: $T) -> $T | null { stub }
+
+}
+
+
+
+struct SqlResult[$T] (
+  count: UInt,
+  request: SqlRequest,
+) {
+  #Iterable fn iterator(this) {
+    return #Iterable.count_iterator(this.count, for (var row in this.iterateRows()) {
+
+    })
+  }
+}

@@ -1,0 +1,15 @@
+
+struct Error (
+  message: String
+  location: String
+  parent: @Error
+) is #Iterable {
+
+  fn #Iterable iterate() -> Iterator[Error] {
+    var something = 2
+    (this as #Iterable).doStuff()
+  }
+  fn getStack() -> []String {
+
+  }
+}

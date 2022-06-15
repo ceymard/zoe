@@ -1,0 +1,2 @@
+type T2 =
+  Typ2 | Typ[A, B] | @Trait[A]

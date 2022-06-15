@@ -1,0 +1,56 @@
+
+trait #json[...$args : []String] (
+  fn jsonIter() -> Iterator[jsonValue] { }
+)
+
+type SomeType = OtherType (
+  is #debug
+)
+
+enum MyDict (
+  | Something
+  | null
+
+  fn new() { }
+)
+
+struct Position (
+  line: Int
+  character: Int
+  offset: Int
+
+  is json.#json["line", "character"]
+)
+
+trait #Range (
+  start: Position
+  end: Position
+
+
+  // Start of method definitions and all...
+  is json.#json["start", "end"]
+
+  fn length(const this) -> Int { return this.end.offset - this.start.offset }
+)
+
+trait #Node (
+  lsp.#Range
+
+  // In a trait, this is the actual, implementing type
+  // $This is an implicit type that refers to the current type being implemented
+  fn new(range: lsp.#Range) -> $This {
+    // Create
+    if ($This.has("")) {
+
+    }
+    return
+  }
+)
+
+struct String (
+  is #Node
+)
+
+struct Number (
+  is #Node
+)

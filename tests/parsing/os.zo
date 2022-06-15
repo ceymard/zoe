@@ -1,0 +1,3 @@
+
+const $os = "linux"
+const $arch = "amd64"

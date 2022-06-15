@@ -1,0 +1,14 @@
+#(
+
+  Traits resemble interfaces, except they do much more.
+
+  Traits can
+   - request the implementing type implements some methods (like interfaces)
+   - implement methods themselves that will be integrated into the implementing type
+   - access $This in their own methods and types (in which case the methods are treated as generic)
+   - define fields (in which case the trait is a struct trait and can only be used on structs)
+   - ask for another trait to be implemented on the type (which will be reflected in $This and this)
+   - provide an implementation for another trait
+
+  A struct may be used as a trait to another struct, in which case it acts like a struct trait.
+#)

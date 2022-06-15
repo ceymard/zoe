@@ -1,0 +1,39 @@
+
+trait #Node (
+  nextSibling: #Node | null
+  prevSibling: #Node | null
+  parentNode: #ParentNode | null
+) {
+
+  fn remove(this) -> void {
+    if (this.parentNode != null && this.parentNode.firstChild == this) {
+      this.parentNode.firstChild = this.nextSibling
+    }
+
+    if (this.prevSibling != null) {
+      this.prevSibling.nextSibling = this.nextSibling
+    }
+
+    if (this.nextSibling != null) {
+      this.nextSibling.prevSibling = this.prevSibling
+    }
+  }
+
+}
+
+trait #ParentNode (
+  #Node
+  firstChild: #Node | null
+) {
+  fn removeChild() {
+    // remove the child
+  }
+}
+
+struct TextNode (
+  #Node
+)
+
+struct HTMLDivElement (
+  #ParentNode
+)

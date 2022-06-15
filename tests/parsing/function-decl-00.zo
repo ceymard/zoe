@@ -1,0 +1,7 @@
+fn main() -> Void {
+
+}
+
+fn main2() -> Int32 {
+  return 1 * 4
+}

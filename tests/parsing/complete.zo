@@ -1,0 +1,121 @@
+/*
+  *** Modules ***
+*/
+
+// Modules may be aliased
+import "mem" as mem
+// Traversing a directory is done with /
+import "collections/special" as scol
+import "//module/from/root" as some_module
+
+// The file extension is assumed to be .zo
+// If an extension is used, the compiler will consider it is zoe code
+// If the path is a directory, the special file __dir__.zo is looked up
+
+// Names may be pulled directly from the import.
+import "collections" ( Dict, Deque, #iterable )
+
+/*
+  *** Module visibility ***
+
+  By default, all imports are local, unless prefixed by "global"
+  All variables, functions and types are exported, unless prefixed by "local"
+*/
+
+
+/*
+  *** Variable declaration ***
+*/
+
+
+/*
+  *** Generics ***
+*/
+
+type MyType[$A, $B] = // ...
+type MyEnum[$A] (
+  | String
+  | Int
+) {
+  #debug
+}
+
+struct MyStruct[$T] (
+  #Node
+
+) {
+  #debug {
+    fn debug(this) -> String { stub }
+  }
+  #other_trait
+  #super_trait
+
+}
+
+#debug #other_trait #super_trait
+struct MyStruct[$T] (
+  field: $T
+) {
+  #debug #other_trait #super_trait
+}
+
+trait MyTrait[$T] {
+  fn new() -> this
+  fn hasNoImplementation(this, String) -> void
+}
+
+/*
+  *** Pointers ***
+
+  In zoe, variables represent values. A variable may be a *pointer* to another value.
+  The "." operator navigates through pointers.
+
+  @* Are C-style pointers, on which is is possible to perform pointer arithmetics
+*/
+
+var something = @other_variable
+var c_var = @*my_value
+
+
+type MyDict[$A] = Dict[$A, String] {
+
+  fn #iterable iterator(this) {
+    return for (var whatever in this) {
+
+    }
+  }
+
+  fn#debug debug(this, needle: String, other: #FatPointer) -> String { stub }
+
+  fn doStuff() -> void { stub }
+
+  fn#other_trait doStuff() -> void { stub }
+
+  fn new(opts: #(param = false, param2: @Struct | null) = #()) -> this {
+    opts.param ?= Struct.new(stuff, 3)
+  }
+  fn debug(this) -> String { stub }
+
+  fn someMethod[$B](this) -> void { return void }
+
+  fn addOne(this) -> Boolean {
+    var some_variable: iso[String] = iso { "Toto" }
+    iso some_variable {
+      some_variable.pouet = take other_iso
+
+    }
+    return true
+  }
+
+}
+
+
+/*?
+  Main function of our program.
+*/
+fn main() {
+  var dct = MyDict[String].new()
+  var dct_debug = dct as #debug
+  dct_debug.debug()
+  dct#debug.debug()
+}

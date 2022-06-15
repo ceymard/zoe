@@ -1,0 +1,22 @@
+#(
+  Example of file that uses the grammar to the max.
+  This file should not produce any errors.
+#)
+
+import "os" as os
+import "time" ( Date, Duration as Dur )
+
+enum Vals (
+  | val1 = iota
+  | val2
+  | val
+)
+
+const ref = ["Hey", "Ho", "Yo"]
+
+fn main() -> void | error {
+  const arr = [23, 43, 54, 66]
+  const some_value = do_something_dangerous() else return error.forward("it really didn't work")
+
+  return os.exit(0)
+}

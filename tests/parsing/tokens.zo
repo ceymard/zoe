@@ -1,0 +1,66 @@
+import "./ast" (#expression)
+
+struct Lexer (
+  filename: String
+  local pos: Int
+) {
+  fn next() -> ZoeToken { }
+  fn rewind() -> void { }
+}
+
+type ZoeToken (
+  | TkFor
+  | TkWhile
+  | TkFn
+  | TkStruct
+  | TkTrait
+  | TkTraitIdent
+  | TkTypeIdent
+  | TkRegularIdent
+  | TkComptimeIdent
+  | TkComptimeTypeIdent
+) {
+  #Token // this ensures that all the types in the enum have the correct trait
+  // and also that all the Token methods can be called on them
+}
+
+
+struct trait #Token (
+  Range
+) {
+
+  fn new(range: Range) -> This {
+    var tk = This()
+    tk::Range = range
+    return tk
+  }
+
+  fn nud(const this, lexer: @Lexer) -> #expression {
+    return #expression.unexpected(this::Range)
+  }
+
+  fn led(const this, lexer: @Lexer, left: #expression) -> #expression {
+    return #expression.unexpected(this::Range)
+  }
+}
+
+struct trait #ValueToken(
+  #Token
+  value: String
+) {
+
+  // String contains a pointer and thus cannot be assigned to another memory region
+  fn new(range: Range, value: String) -> This {
+    var tk = This()
+    tk::Range = range
+    tk.value = value
+    return tk
+  }
+
+}
+
+struct TkFor(#Token) {
+  fn nud(const this, lexer) {
+    // Parse the for statement
+  }
+}

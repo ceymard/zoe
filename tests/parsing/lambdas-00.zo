@@ -1,0 +1,17 @@
+// The smallest possible form for a lambda
+var a = fn { return 2 }
+var b = fn () { return 2 }
+var c = fn (a: Int) { return a + 2 }
+var d = fn (a: Int, b: Int) { return a + b }
+var e = fn (a: Int, b: Int) -> Int { return a + b }
+// Here we give a name to the function, which is only really useful for debugging purposes
+// The name is not added to the local scope.
+var f = fn my_callback(a: Int, b: Int) -> Int { return a + b }
+
+/*?
+  Yes, do a lot of stuff
+*/
+fn main() {
+  // This should work
+  something.addCallback(fn { return 2 })
+}

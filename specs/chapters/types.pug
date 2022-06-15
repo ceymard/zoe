@@ -1,0 +1,41 @@
+
+
+h1 Types
+
+:md
+  Types always start with an uppercase letter.
+
+  Pointers to types start with the `@` character.
+
+:zoe
+  var i1: Int
+  var i2: Int32
+  var f1: Float
+  var f2: Float32
+  var f3: Float64
+  var b1: Boolean
+  var d1: Date
+  var d2: Duration
+  var a1: []SomeStruct
+  var c1: @*C_opaque_ptr
+  var c2: @*C_known_size_struct
+  var ptr: @SomeStruct
+
+:md
+  In the case of traits, they start with the pound (`#`) sign. A trait variable is always a fat pointer that holds both the address of the data and the address of the trait's vtable.
+:zoe
+  var tr: #Trait
+
+h2 Enums
+
+:md
+  If all types in an `enum` have a given `trait`, then the `enum` has the `trait` as well.
+
+h2 Traits
+
+:md
+  Traits define functions that a type must implement.
+
+  Struct traits may also define fields that will be included in structs.
+
+  Traits may implement some of the methods themselves.

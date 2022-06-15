@@ -1,0 +1,5 @@
+
+type Node = struct (
+  value: String
+  next: Node
+)

@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "target": "es2021",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "declaration": true,
+        "inlineSourceMap": true,
+        "experimentalDecorators": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "rootDir": "src",
+        "outDir": "build",
+        "lib": ["ES2021", "DOM"],
+        "types": ["node"],
+        "jsx": "react",
+        "jsxFactory": "E",
+        "jsxFragmentFactory": "E.Fragment",
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": "./src"
+    },
+    "include": ["src/**/*"]
+}
