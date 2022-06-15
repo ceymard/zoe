@@ -141,3 +141,8 @@ export class FnDeclaration extends Declaration {
     super(ident, ident.range)
   }
 }
+
+export class Variable extends Declaration {
+  type_expression: Expression | null = null
+  default_expression: Expression | null = null
+}

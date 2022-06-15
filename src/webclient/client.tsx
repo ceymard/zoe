@@ -53,7 +53,7 @@ const o_parsed = o_file_contents.tf(async _f => {
 })
 
 function display_token(token: tk.Token) {
-  return <span style={{display: "inline-block"}} class={[stylemap.get(token.constructor as typeof tk.Token)]} title={`@${token.start.line+1}:${token.start.character+1} (${token.constructor.name})`}>{token.repr()}</span>
+  return <span style={{display: "inline-block"}} class={[stylemap.get(token.constructor as typeof tk.Token)]} title={`@${token.range.start.line+1}:${token.range.start.character+1} (${token.constructor.name})`}>{token.repr()}</span>
 }
 
 function obj_renderer(obj: any, indent = 0, pname: string = "") {

@@ -1,4 +1,4 @@
-import * as ast from "./node"
+import * as ast from "./ast"
 
 export class Scope extends Map<string, ast.Node> {
 
@@ -17,7 +17,7 @@ export class Scope extends Map<string, ast.Node> {
   }
 
   addDeclaration(decl: ast.Declaration) {
-    this.set(decl.name, decl)
+    this.set(decl.name.value, decl)
     this.statements.push(decl)
   }
 }

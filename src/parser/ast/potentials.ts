@@ -5,7 +5,7 @@
  */
 
 import { augment } from "parser/helpers"
-import * as ast from "./node"
+import * as ast from "./ast"
 
 augment(ast.Dot, {
   isPotentialComptimeExp() {

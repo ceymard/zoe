@@ -1,4 +1,4 @@
-import * as ast from "./node"
+import * as ast from "./ast"
 
 export class Block {
   statements: ast.Statement[] = []

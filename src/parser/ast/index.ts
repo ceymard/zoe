@@ -1,1 +1,3 @@
-export * from "./node"
+export * from "./ast"
+import "./potentials"
+import "./block"

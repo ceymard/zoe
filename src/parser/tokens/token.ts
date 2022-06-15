@@ -1,5 +1,4 @@
 import { augment } from "parser/helpers"
-import { Diagnostic, uinteger, DiagnosticSeverity } from "vscode-languageserver"
 import { Range, Position } from "parser/range"
 import type { Parser } from "../parser"
 import * as ast from "parser/ast"
@@ -10,11 +9,9 @@ export const keywords: { new (...a: any): Token, kw: string }[] = []
 export class Token {
   LBP!: number
   // The following four fields are filled by the lexer.
-  offset: uinteger = 0
-  length: uinteger = 0
+  offset: number = 0
+  length: number = 0
   range: Range
-  start: Position = {line: 0, character: 0}
-  end: Position = {line: 0, character: 0}
 
   constructor(lex: Parser) {
     this.offset = lex.start
