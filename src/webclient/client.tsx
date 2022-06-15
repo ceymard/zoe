@@ -48,7 +48,7 @@ const o_parsed = o_file_contents.tf(async _f => {
   let f = await _f
   const p = new Parser(f)
   const nodes = p.parseAll()
-  console.log(p.diagnostics)
+  // console.log(p.diagnostics)
   return { diagnostics: p.diagnostics, ast: nodes }
 })
 

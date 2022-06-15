@@ -7,6 +7,12 @@
 import { augment } from "parser/helpers"
 import * as ast from "./ast"
 
+augment(ast.ImportAs, {
+  isPotentialTypeExpression() {
+    return this.sub_ident?.isPotentialTypeExpression() ?? this.name.isPotentialTypeExpression()
+  }
+})
+
 augment(ast.Dot, {
   isPotentialComptimeExp() {
     return this.right.isPotentialComptimeExp()

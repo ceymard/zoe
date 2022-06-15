@@ -11,6 +11,9 @@ export class Node {
     return this.constructor === kls
   }
 
+  /** Return true if this node can be used to resolve to a type declaration */
+  isPotentialTypeExpression() { return false }
+
   isPotentialIdentExp() { return false }
   isPotentialTypeIdentExp() { return false }
   isPotentialTraitExp() { return false }

@@ -196,10 +196,10 @@ augment(At, {
 export class GenericIdent extends ValueToken {
   isGenericIdent(): boolean { return true }
 }
-@literal(ast.Ident) export class Ident extends GenericIdent { }
-@literal(ast.TypeIdent) export class TypeIdent extends GenericIdent { }
-@literal(ast.TraitIdent) export class TraitIdent extends GenericIdent { }
-@literal(ast.StructTraitIdent) export class StructTraitIdent extends GenericIdent { }
+@literal(ast.Ident) export class Ident extends GenericIdent { toAstIdent() { return new ast.Ident(this.range, this.value) } }
+@literal(ast.TypeIdent) export class TypeIdent extends GenericIdent { toTypeIdent() { return new ast.TypeIdent(this.range, this.value) } }
+@literal(ast.TraitIdent) export class TraitIdent extends GenericIdent { toTraitIdent() { return new ast.TraitIdent(this.range, this.value) } }
+@literal(ast.StructTraitIdent) export class StructTraitIdent extends GenericIdent { toStructTraitIdent() { return new ast.StructTraitIdent(this.range, this.value) } }
 @literal(ast.ComptimeIdent) export class ComptimeIdent extends GenericIdent { }
 @literal(ast.ComptimeTypeIdent) export class ComptimeTypeIdent extends GenericIdent { }
 @literal(ast.Number) export class Number extends ValueToken { }
@@ -326,8 +326,4 @@ function repr(str: string) {
   return function (kls: any) {
     kls.prototype.repr = function () { return str }
   }
-}
-
-function id(kls: any) {
-  kls.prototype.isGenericIdent = function () { return true }
 }

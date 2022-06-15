@@ -5,11 +5,9 @@ import { Parser } from "parser/parser"
 import { Scope } from "parser/ast/scope"
 
 // Function called by var, const, but also by fn arguments and struct members
-export function parse_variable_holder(p: Parser): ast.Variable | null {
+export function parse_variable_holder(p: Parser): ast.Variable {
   // first, lookup an identifier
-  const id = p.expect(tk.Ident)
-  if (!id?.is(tk.Ident)) return null
-  const res = new ast.Variable(id.nud(p) as ast.Ident)
+  const res = new ast.Variable(p.expectIdent())
 
   // then, try to see if there is a defined type
   if (p.consume(tk.Colon)) {
@@ -34,12 +32,14 @@ export function parse_variable_holder(p: Parser): ast.Variable | null {
 
 augment(tk.Const, {
   parseTopLevel(p, scope) {
-    parse_variable_holder(p)
+    const v = parse_variable_holder(p)
+    scope.addDeclaration(v)
   }
 })
 
 augment(tk.Var, {
   parseTopLevel(p, scope) {
-    parse_variable_holder(p)
+    const v = parse_variable_holder(p)
+    scope.addDeclaration(v)
   }
 })

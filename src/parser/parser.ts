@@ -1,5 +1,5 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode-languageserver"
-import type * as ast from "parser/ast"
+import * as ast from "parser/ast"
 import * as tk from "./tokens"
 import { Scope } from "./ast/scope"
 
@@ -57,6 +57,17 @@ export class Parser {
       this.reportError(this.last.range, `unexpected ${this.last.repr()}, expected ${t.name}`)
     }
     return r
+  }
+
+  expectIdent(): ast.Ident {
+    const id = this.next()
+    if (id.is(tk.Ident)) {
+      return id.toAstIdent()
+    }
+    this.reportError(id.range, "expected an identifier")
+    this.rewind()
+    return new ast.Ident(id.range, "--bogus-ident--")
+    // Maybe we shouldn't expect that ?
   }
 
   next() {
