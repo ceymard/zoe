@@ -18,8 +18,10 @@ augment(tk.Import, {
 
     if (!p.expect(tk.LParen)) return
     do {
+      if (p.consume(tk.RParen))
+        break
       const next = p.next()
-      if (next.constructor === tk.RParen) break
+
       const aid = next.nud(p) as ast.Ident
       if (p.consume(tk.As)) {
         const next = p.next()
