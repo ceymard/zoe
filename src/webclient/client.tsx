@@ -63,7 +63,11 @@ function obj_renderer(obj: any, indent = 0, pname: string = "") {
     return Array.isArray(v) ? v.map((v, i) => obj_renderer(v, indent + 1, key + "[" + i + "]")) : obj_renderer(v, indent + 1, key)
   }
 
-  return <div style={{marginLeft: `${indent?1:0}em`}}>{pname ? pname + ": " : ""}{obj?.constructor?.name ?? "null"}{obj instanceof a.Literal ? `<${obj.value}>` : ''}
+  return <div style={{marginLeft: `${indent?1:0}em`}}>
+    <span class={stylemapast.get(obj.constructor)} title={obj?.constructor?.name ?? "null"}>
+      {obj instanceof a.Literal ? obj.value : obj?.constructor?.name ?? "null"}
+      <span class={css.prop}>{pname}</span>
+    </span>
     {Object.keys(obj).map(o => prop_renderer(o, obj[o]))}
   </div>
 }
@@ -71,6 +75,7 @@ function obj_renderer(obj: any, indent = 0, pname: string = "") {
 setup_mutation_observer(document.body)
 
 const stylemap = new Map<typeof tk.Token, string>()
+const stylemapast = new Map<typeof a.Node, string>()
 
 namespace css {
   export const keyword = style("keyword", S.text.bold.color(theme.tint))
@@ -78,6 +83,7 @@ namespace css {
   export const error = style("error", S.text.color("red"))
   export const type = style("type", S.text.color("magenta"))
   export const trait = style("trait", S.text.color("darkorange"))
+  export const prop = style("prop", S.text.color("#aaaaaa").size("0.75em").box.marginLeft("0.5em"))
 
   export const all_spaced = style("allspaced", {
     whiteSpace: "normal",
@@ -89,7 +95,9 @@ namespace css {
   // export const root =
 }
 
-add_style(css.keyword, tk.Var, tk.Const, tk.Struct, tk.Fn, tk.Import, tk.Export, tk.Extern, tk.Finally, tk.Try, tk.If, tk.Else, tk.Catch, tk.As, tk.While, tk.For, tk.Yield, tk.Return, tk.Is, tk.Type, tk.Trait, tk.Iso, tk.Extern, tk.Enum)
+add_style(css.keyword,
+  tk.Var, tk.Const, tk.Struct, tk.Fn, tk.Import, tk.Export, tk.Extern, tk.Finally, tk.Try, tk.If, tk.Else, tk.Catch, tk.As, tk.While, tk.For, tk.Yield, tk.Return, tk.Is, tk.Type, tk.Trait, tk.Iso, tk.Extern, tk.Enum
+)
 add_style(css.green, tk.String, tk.StringPart, tk.StringEnd)
 add_style(css.magenta, tk.Number, tk.True, tk.False, tk.Null, tk.This, tk.ErrorLiteral)
 add_style(css.operator, tk.Plus, tk.Minus, tk.Mul, tk.Assign, tk.Arrow, tk.Dot, tk.Colon, tk.SemiColon)
@@ -97,8 +105,16 @@ add_style(css.error, tk.Unexpected)
 add_style(css.type, tk.TypeIdent, tk.ComptimeTypeIdent)
 add_style(css.trait, tk.TraitIdent, tk.StructTraitIdent)
 
+add_style_ast(css.green, a.String)
+add_style_ast(css.magenta, a.True, a.False, a.Number)
+add_style_ast(css.error, a.Unexpected)
+
 function add_style(css_class: string, ...tks: (typeof tk.Token)[]) {
   for (let tk of tks) stylemap.set(tk, css_class)
+}
+
+function add_style_ast(css_class: string, ...ast: (new (...a: any[]) => a.Node)[]) {
+  for (let tk of ast) stylemapast.set(tk, css_class)
 }
 
 document.body.appendChild(<div class={[S.box.fullScreen.flex.gappedRow(16).box.padding(16), th.getClass()]}>

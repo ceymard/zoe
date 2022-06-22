@@ -18,39 +18,66 @@ struct Position (
   line: Int
   character: Int
   offset: Int
+) {
+  #json["line", "character"]
+}
 
-  is json.#json["line", "character"]
-)
-
-trait #Range (
+struct Range (
   start: Position
   end: Position
-
+) {
+  fn length(const this) -> Int { return this.end.offset - this.start.offset }
 
   // Start of method definitions and all...
-  is json.#json["start", "end"]
+  #json["start", "end"]
+}
 
-  fn length(const this) -> Int { return this.end.offset - this.start.offset }
-)
+trait #Ranged (
+  range: Range
+) {
+
+}
+
+import "//lsp" as lsp
+import "//lsp" (#Range)
 
 trait #Node (
-  lsp.#Range
-
+  lsp.#Ranged
+) {
   // In a trait, this is the actual, implementing type
   // $This is an implicit type that refers to the current type being implemented
-  fn new(range: lsp.#Range) -> $This {
+  fn new(range: @lsp.Range) -> $This {
     // Create
     if ($This.has("")) {
 
     }
     return
   }
-)
 
-struct String (
-  is #Node
-)
+  fn asValueNode(this) -> #ValueNode | null { return null }
+}
 
-struct Number (
-  is #Node
-)
+trait #ValueNode (
+  #Node
+  value: String
+) {
+  fn#Node asValueNode(this) { return this }
+}
+
+trait #BinOpNode (
+  #Node
+  left: #Expression
+  right: #Expression
+) {
+  fn new(left: #Expression, right: #Expression) -> $This {
+    var res = $This(left = left, right = right)
+    res.range.extend(left)
+    res.range.extend(right)
+    return res
+  }
+}
+
+struct String (#ValueNode)
+struct Number (#ValueNode)
+struct Mul (#BinOpNode)
+struct Div (#BinOpNode)
