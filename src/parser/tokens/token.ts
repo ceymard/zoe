@@ -177,6 +177,7 @@ augment(At, {
   }
 })
 
+@repr("...") export class Elipsis extends Token { }
 @repr(".") @binop(ast.Dot) export class Dot extends Token { }
 // @repr("::") @binop(ast.DoubleColon) export class DoubleColon extends Token { }
 @kw("in") @binop(ast.In) export class In extends Keyword { }

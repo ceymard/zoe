@@ -478,8 +478,13 @@ export class Parser {
           return new tk.Comma(this)
 
         // .
-        case C.full_stop:
+        case C.full_stop: {
+          if (this.source.charCodeAt(this.offset + 1) === C.full_stop && this.source.charCodeAt(this.offset + 2) === C.full_stop) {
+            this.offset += 2
+            return new tk.Elipsis(this)
+          }
           return new tk.Dot(this)
+        }
 
         // [
         case C.left_square_bracket:
