@@ -1,4 +1,4 @@
-#(
+/*
 
   Traits resemble interfaces, except they do much more.
 
@@ -11,4 +11,4 @@
    - provide an implementation for another trait
 
   A struct may be used as a trait to another struct, in which case it acts like a struct trait.
-#)
+*/

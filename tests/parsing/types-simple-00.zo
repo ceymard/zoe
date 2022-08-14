@@ -1,4 +1,3 @@
-type A (B)
+type A = B
 
-type C (A | D | E | @SomeType)
-is Something
+type C = A | D | E | @SomeType

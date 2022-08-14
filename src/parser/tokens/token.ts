@@ -1,5 +1,5 @@
 import { augment } from "parser/helpers"
-import { Range, Position } from "parser/range"
+import { Range, Position, Ranged } from "parser/range"
 import type { Parser } from "../parser"
 import * as ast from "parser/ast"
 import { Scope } from "parser/ast/scope"
@@ -34,7 +34,7 @@ export class Token {
 
   _unexpected(p: Parser) {
     p.reportError(this.range, `unexpected token ${this.repr()}`)
-    return new ast.Unexpected(this.range)
+    return new ast.Unexpected([this])
   }
 
   // Only tokens expected at the top level need to implement this method,
@@ -50,13 +50,32 @@ export class Token {
   parseInCodeBlock(p: Parser, scope: Scope): void { }
 
 
-  nud(p: Parser): ast.Node { return this._unexpected(p) }
-  led(p: Parser, left: ast.Node): ast.Node { throw new Error("no led method") }
+  nud(p: Parser, sc: Scope): ast.Node { return this._unexpected(p) }
+
+  nudExpect<T extends ast.Node>(p: Parser, sc: Scope, kls: new (...a: any[]) => T): T {
+    const res = this.nud(p, sc)
+    if (!(res instanceof kls)) {
+      const r = this._unexpected(p)
+      // p.rewind()
+      return r as T
+    }
+    return res as T
+  }
+  nudExpectIdent(p: Parser, sc: Scope) {
+    return this.nudExpect(p, sc, ast.Ident)
+  }
+
+  nudExpectString(p: Parser, sc: Scope) {
+    return this.nudExpect(p, sc, ast.String)
+  }
+
+  led(p: Parser, scope: Scope, left: ast.Node): ast.Node { throw new Error("no led method") }
 
   parseStatement(p: Parser): ast.Node { return this._unexpected(p) }
   parseVariableDeclaration(p: Parser): ast.Node { return this._unexpected(p) }
 
-  isGenericIdent() { return false }
+  isGenericIdent(): this is GenericIdent { return false }
+  toIdent(): ast.Ident { return new ast.Ident(this, "?", ast.IdentKind.Bogus) }
 }
 
 // with an LBP of -1, the token can never be selected in expression() as a led candidate.
@@ -64,6 +83,7 @@ Token.prototype.LBP = -1
 
 export abstract class ValueToken extends Token {
   value: string
+  toIdent(): ast.Ident { return new ast.Ident(this, this.value, ast.IdentKind.Bogus) }
   constructor(lex: Parser) {
     super(lex)
     this.value = lex.source.slice(lex.start, lex.offset + 1)
@@ -168,12 +188,12 @@ _() // prio
 export const prio_at = __prio
 @repr("@") @suffix(ast.PtrDereference) export class At extends Token { }
 augment(At, {
-  nud(p: Parser) {
-    let right = p.expression(prio_at + 1)
+  nud(p, sc) {
+    let right = p.expression(sc, prio_at + 1)
     if (right.isPotentialComptimeTypeExp() || right.isPotentialTypeIdentExp()) {
       return new ast.PtrType(right)
     }
-    return new ast.PtrDereference(right)
+    return new ast.PtrReference(right)
   }
 })
 
@@ -181,6 +201,9 @@ augment(At, {
 @repr(".") @binop(ast.Dot) export class Dot extends Token { }
 // @repr("::") @binop(ast.DoubleColon) export class DoubleColon extends Token { }
 @kw("in") @binop(ast.In) export class In extends Keyword { }
+
+_() // prio
+export const prio_idents = __prio
 
 @repr("(") export class LParen extends Token { }
 @repr(")") export class RParen extends Token { }
@@ -195,14 +218,20 @@ augment(At, {
 
 
 export class GenericIdent extends ValueToken {
-  isGenericIdent(): boolean { return true }
+  kind!: ast.IdentKind
+  isGenericIdent(): this is GenericIdent { return this.kind !== ast.IdentKind.Bogus }
+  toIdent() {
+    return new ast.Ident(this, this.value, this.kind)
+  }
 }
-@literal(ast.Ident) export class Ident extends GenericIdent { toAstIdent() { return new ast.Ident(this.range, this.value) } }
-@literal(ast.TypeIdent) export class TypeIdent extends GenericIdent { toTypeIdent() { return new ast.TypeIdent(this.range, this.value) } }
-@literal(ast.TraitIdent) export class TraitIdent extends GenericIdent { toTraitIdent() { return new ast.TraitIdent(this.range, this.value) } }
-@literal(ast.StructTraitIdent) export class StructTraitIdent extends GenericIdent { toStructTraitIdent() { return new ast.StructTraitIdent(this.range, this.value) } }
-@literal(ast.ComptimeIdent) export class ComptimeIdent extends GenericIdent { }
-@literal(ast.ComptimeTypeIdent) export class ComptimeTypeIdent extends GenericIdent { }
+
+@ident(ast.IdentKind.Regular) export class Ident extends GenericIdent { }
+@ident(ast.IdentKind.Type) export class TypeIdent extends GenericIdent { }
+@ident(ast.IdentKind.Trait) export class TraitIdent extends GenericIdent { }
+@ident(ast.IdentKind.StructTrait) export class StructTraitIdent extends GenericIdent { }
+@ident(ast.IdentKind.Comptime) export class ComptimeIdent extends GenericIdent { }
+@ident(ast.IdentKind.ComptimeType) export class ComptimeTypeIdent extends GenericIdent { }
+
 @literal(ast.Number) export class Number extends ValueToken { }
 @literal(ast.String) export class String extends ValueToken { }
 
@@ -263,8 +292,8 @@ function binop(binop: new (left: ast.Node, right: ast.Node) => ast.BinOp) {
     let _prio = __prio
     augment(inst, {
       LBP: __prio,
-      led(p, left) {
-        const right = p.expression(_prio + 1)
+      led(p, sc, left) {
+        const right = p.expression(sc, _prio + 1)
         const res = new binop(left, right)
         return res
       }
@@ -277,8 +306,8 @@ function prefix(unary: new (operand: ast.Node) => ast.UnaryOp) {
     let _prio = __prio
     augment(inst, {
       LBP: __prio,
-      nud(p) {
-        const right = p.expression(_prio + 1)
+      nud(p, sc) {
+        const right = p.expression(sc, _prio + 1)
         const res = new unary(right)
         return res
       }
@@ -291,7 +320,7 @@ function suffix(unary: new (unary: ast.Node) => ast.UnaryOp) {
     // let _prio = __prio
     augment(inst, {
       LBP: __prio,
-      led(p, left) {
+      led(p, sc, left) {
         const res = new unary(left)
         return res
       }
@@ -299,18 +328,33 @@ function suffix(unary: new (unary: ast.Node) => ast.UnaryOp) {
   }
 }
 
-function literal(node: new (range: Range, value: string) => ast.Literal) {
+function literal(node: new (range: Ranged, value: string) => ast.Literal) {
   return function _suffix(inst: new (...a: any) => ValueToken) {
     // let _prio = __prio
     augment(inst, {
       // LBP: __prio,
       nud() {
-        const res = new node(this.range, this.value)
+        const res: ast.Literal = new node(this, this.value)
         return res
       }
     })
   }
 }
+
+function ident(kind: ast.IdentKind) {
+  return function _suffix(inst: typeof GenericIdent) {
+    // let _prio = __prio
+    inst.prototype.kind = kind
+    augment(inst, {
+      // LBP: __prio,
+      nud() {
+        const res: ast.Ident = new ast.Ident(this, this.value, kind)
+        return res
+      }
+    })
+  }
+}
+
 
 
 function kw(kw: string) {

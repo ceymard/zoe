@@ -5,6 +5,7 @@
         "moduleResolution": "node",
         "declaration": true,
         "inlineSourceMap": true,
+        "noUnusedParameters": false,
         "experimentalDecorators": true,
         "strict": true,
         "noUnusedLocals": true,

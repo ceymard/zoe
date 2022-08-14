@@ -1,4 +1,4 @@
-import { setup_mutation_observer, o, IfResolved, Repeat, $observe, If } from "elt"
+import { setup_mutation_observer, o, IfResolved, Repeat, $observe, If, } from "elt"
 import { Button, rule, style, Styling as S, theme, ColorTheme } from "elt-ui"
 import * as tk from "../parser/tokens"
 import { Parser } from "../parser/parser"
@@ -52,8 +52,9 @@ const o_parsed = o_file_contents.tf(async _f => {
   return { diagnostics: p.diagnostics, ast: nodes }
 })
 
+
 function display_token(token: tk.Token) {
-  return <span style={{display: "inline-block"}} class={[stylemap.get(token.constructor as typeof tk.Token)]} title={`@${token.range.start.line+1}:${token.range.start.character+1} (${token.constructor.name})`}>{token.repr()}</span>
+  return <span style={{display: "inline-block"}} class={[stylemap.get(token.constructor as typeof tk.Token)]} title={`@${token.range.start?.line+1}:${token.range.start?.character+1} (${token.constructor.name})`}>{token.repr()}</span>
 }
 
 function obj_renderer(obj: any, indent = 0, pname: string = "") {
@@ -84,6 +85,7 @@ namespace css {
   export const type = style("type", S.text.color("magenta"))
   export const trait = style("trait", S.text.color("darkorange"))
   export const prop = style("prop", S.text.color("#aaaaaa").size("0.75em").box.marginLeft("0.5em"))
+  export const eof = style("eof", S.text.color("#ddd"))
 
   export const all_spaced = style("allspaced", {
     whiteSpace: "normal",
@@ -104,6 +106,7 @@ add_style(css.operator, tk.Plus, tk.Minus, tk.Mul, tk.Assign, tk.Arrow, tk.Dot, 
 add_style(css.error, tk.Unexpected)
 add_style(css.type, tk.TypeIdent, tk.ComptimeTypeIdent)
 add_style(css.trait, tk.TraitIdent, tk.StructTraitIdent)
+add_style(css.eof, tk.Eof)
 
 add_style_ast(css.green, a.String)
 add_style_ast(css.magenta, a.True, a.False, a.Number)
@@ -133,8 +136,12 @@ document.body.appendChild(<div class={[S.box.fullScreen.flex.gappedRow(16).box.p
       {o_lexed.tf(l => l.map(tk => display_token(tk)))}
     </div>)}
     {IfResolved(o_parsed, o_p => <>
-      {o_p.tf(p => obj_renderer(p.ast))}
-      <div>{Repeat(o_p.p("diagnostics"), o_diag => <div>line {o_diag.tf(d => d.range.start.line+1)}: {o_diag.p("message")}</div>)}</div>
+      {o_p.tf(p => {
+        console.log(p.diagnostics)
+        console.log(p.ast)
+        return obj_renderer(p.ast)
+      })}
+      <div>{Repeat(o_p.p("diagnostics"), o_diag => <div>line {o_diag.tf(d => d.range.start?.line+1 ?? "??")}: {o_diag.p("message")}</div>)}</div>
     </>)}
   </div>
 </div>)

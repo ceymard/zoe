@@ -8,7 +8,7 @@ function char(str: string) { return str.charCodeAt(0) }
 const PART_OF_IDENT = 0b1110
 const LETTER =    0b1100
 const UPPERCASE = 0b1000
-const LOWERCASE = 0b0100
+// const LOWERCASE = 0b0100
 const DIGIT =     0b0010
 const SPACE =     0b0001
 
@@ -59,14 +59,22 @@ export class Parser {
     return r
   }
 
-  expectIdent(): ast.Ident {
+  consumeIdent(kind = ast.IdentKind.Regular): ast.Ident | null {
     const id = this.next()
-    if (id.is(tk.Ident)) {
-      return id.toAstIdent()
+    if (!id.isGenericIdent() || id.kind !== kind) {
+      // this.reportError(id.range, `expected a ${kind} identifier`)
+      this.rewind()
+      return null
     }
-    this.reportError(id.range, "expected an identifier")
-    this.rewind()
-    return new ast.Ident(id.range, "--bogus-ident--")
+    return id.toIdent()
+  }
+
+  expectIdent(kind = ast.IdentKind.Regular): ast.Ident {
+    const id = this.next()
+    if (!id.isGenericIdent() || id.kind !== kind) {
+      this.reportError(id.range, `expected a ${kind} identifier`)
+    }
+    return id.toIdent()
     // Maybe we shouldn't expect that ?
   }
 
@@ -89,10 +97,10 @@ export class Parser {
     return scope
   }
 
-  expression(rbp: number): ast.Node {
+  expression(scope: Scope, rbp: number): ast.Node {
     let tk = this.next()
     if (tk.isEof()) return tk._unexpected(this)
-    let left = tk.nud(this)
+    let left = tk.nud(this, scope)
 
     do {
       tk = this.next()
@@ -100,7 +108,7 @@ export class Parser {
         this.rewind()
         break
       }
-      left = tk.led(this, left)
+      left = tk.led(this, scope, left)
     } while (true)
     return left
   }
@@ -124,7 +132,7 @@ export class Parser {
 
   unexpected(): tk.Token {
     const r = new tk.Unexpected(this)
-    this.reportError(r, `unexpected '${r.value}'`)
+    this.reportError(r.range, `unexpected '${r.value}'`)
     return r
   }
 

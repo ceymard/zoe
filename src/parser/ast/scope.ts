@@ -16,8 +16,9 @@ export class Scope extends Map<string, ast.Node> {
     return this.parent?.get(symbol)
   }
 
-  addDeclaration(decl: ast.Declaration) {
-    this.set(decl.name.value, decl)
+  addDeclaration(name: ast.Ident, decl: ast.Statement) {
+    if (name.isBogus()) return // do not add bogus names
+    this.set(name.value, decl)
     this.statements.push(decl)
   }
 }

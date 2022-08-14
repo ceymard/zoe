@@ -1,10 +1,10 @@
-import { Range } from "parser/range"
-import * as tk from "parser/tokens"
+import { Range, Ranged } from "parser/range"
+// import * as tk from "parser/tokens"
 
 export class Node {
   range: Range = new Range()
-  constructor(...ranges: Range[]) {
-    for (const r of ranges) this.range.extend(r)
+  constructor(ranges: Ranged[]) {
+    for (const r of ranges) this.range.extend(r.range)
   }
 
   is<NKls extends new (...a: any[]) => Node>(kls: NKls): this is InstanceType<NKls> {
@@ -27,26 +27,28 @@ export class Node {
 export class Statement extends Node { }
 
 export class Declaration extends Statement {
-  constructor(public name: Ident, ...ranges: Range[]) { super(...ranges) }
+  constructor(public name: Ident, ...ranges: Ranged[]) { super(ranges) }
 }
 
 export class Expression extends Statement { }
 
 export class BinOp extends Expression {
   constructor(public left: Node, public right: Node) {
-    super(left.range) // FIXME
+    super([left]) // FIXME
   }
 }
 
 export class UnaryOp extends Expression {
   constructor(public operand: Node) {
-    super(operand.range)
+    super([operand])
   }
 }
 
 export class Literal extends Expression {
-  constructor(range: Range, public value: string) { super(range) }
+  constructor(range: Ranged, public value: string) { super([range]) }
+  isBogus(){ return false }
 }
+
 
 export class Unexpected extends Node { }
 
@@ -57,14 +59,27 @@ export class False extends Node { }
 export class Null extends Node { }
 export class Void extends Node { }
 export class ErrorLiteral extends Node { }
-export class Ident extends Literal { }
-export class TypeIdent extends Literal { }
-export class TraitIdent extends Literal { }
-export class StructTraitIdent extends Literal { }
-export class ComptimeIdent extends Literal { }
-export class ComptimeTypeIdent extends Literal { }
 export class Number extends Literal { }
 export class String extends Literal { }
+
+export const enum IdentKind {
+  Regular = "regular",
+  Type = "type",
+  Trait = "trait",
+  Struct = "struct",
+  StructTrait = "struct trait",
+  Comptime = "comptime",
+  ComptimeType = "comptime type",
+  Bogus = "bogus"
+}
+
+export class Ident extends Literal {
+  constructor(rng: Ranged, value: string, public kind: IdentKind) { super(rng, value) }
+  isTypeIdent() { return this.kind === IdentKind.Type }
+  isTraitIdent() { return this.kind === IdentKind.Trait }
+  isBogus() { return this.kind === IdentKind.Bogus }
+}
+
 //export class StringPart extends Node { }
 //export class StringEnd extends Node { }
 
@@ -120,7 +135,7 @@ export class Branch extends Node {
     public condition: Node,
     public then: Node,
     public otherwise: Node,
-  ) { super(condition.range, then.range, otherwise.range) }
+  ) { super([condition, then, otherwise]) }
 }
 
 // All loops (for, while, do..while) get transformed into Loop
@@ -128,20 +143,44 @@ export class Loop extends Node {
   constructor(
     public init: Node,
     public body: Node[],
-  ) { super(init.range, ...body.map(b => b.range)) }
+  ) { super([init, ...body]) }
+}
+
+// Templated expressions instanciate their types
+//
+export class TemplatedExpression extends Declaration {
+
 }
 
 export class ImportAs extends Declaration {
   constructor(ident: Ident, public path: String, public sub_ident: Ident | null = null) {
-    super(ident, ident.range, path.range)
+    super(ident, ident, path)
     if (sub_ident) this.range.extend(sub_ident.range)
+  }
+}
+
+export class Block extends Statement {
+  constructor(public statements: Statement[]) { super([...statements]) }
+}
+
+export class FnDefinition extends Statement {
+  constructor(public ident: Ident | null, public args: Variable[], public body: Statement | null) {
+    const ranges = [...args, ...(body ? [body] : [])]
+    super(ranges, /* ...args */)
   }
 }
 
 export class FnDeclaration extends Declaration {
   extern = false
+  args: Node[] = []
   constructor(ident: Ident) {
-    super(ident, ident.range)
+    super(ident, ident)
+  }
+}
+
+export class TypeDeclaration extends Declaration {
+  constructor(ident: Ident, public decls: Expression[]) {
+    super(ident, ident)
   }
 }
 

@@ -11,8 +11,8 @@ augment(tk.Import, {
       // Import as
       const id = p.expect(tk.Ident)
       if (id == null) return
-      const aid = id.nud(p) as ast.Ident
-      scope.addDeclaration(new ast.ImportAs(aid, path.nud(p) as ast.String))
+      const aid = id.nudExpectIdent(p, scope)
+      scope.addDeclaration(aid, new ast.ImportAs(aid, path.nudExpectString(p, scope)))
       return
     }
 
@@ -22,14 +22,14 @@ augment(tk.Import, {
         break
       const next = p.next()
 
-      const aid = next.nud(p) as ast.Ident
+      const aid = next.nudExpectIdent(p, scope)
       if (p.consume(tk.As)) {
         const next = p.next()
-        const aid2 = next.nud(p) as ast.Ident
-        scope.addDeclaration(new ast.ImportAs(aid2, path.nud(p) as ast.String, aid))
+        const aid2 = next.nudExpect(p, scope, ast.Ident)
+        scope.addDeclaration(aid2, new ast.ImportAs(aid2, path.nudExpectString(p, scope), aid))
       } else {
         // FIXME as
-        scope.addDeclaration(new ast.ImportAs(aid, path.nud(p) as ast.String, aid))
+        scope.addDeclaration(aid, new ast.ImportAs(aid, path.nudExpectString(p, scope), aid))
       }
       // try to eat a comma
       p.consume(tk.Comma)
