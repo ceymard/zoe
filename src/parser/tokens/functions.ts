@@ -10,8 +10,12 @@ import { parse_variable_holder } from "./vars"
 function parse_function(p: Parser, sc: Scope) {
   const ident = p.consumeIdent() ?? p.consumeIdent(ast.IdentKind.Comptime)
   const tpl = parse_templated_arguments(p)
+  const fn = new ast.FnDefinition()
+  if (ident) {
+    fn.setIdent(ident)
+    // we should also add it to the function scope ?
+  }
 
-  const args: ast.Variable[] = []
   // There are arguments !
   if (p.consume(tk.LParen)) {
     // parse arguments
@@ -19,23 +23,19 @@ function parse_function(p: Parser, sc: Scope) {
       if (p.consume(tk.RParen)) break
       // there is no ), so there has to be a variable-like declaration
       const va = parse_variable_holder(p, sc)
-      args.push(va)
+      fn.addArg(va)
       p.consume(tk.Comma) // Consume a comma
     }
   }
 
   // There is a body !
   if (p.consume(tk.LBracket)) {
-    const subscope = sc.subScope()
-    const fndef = new ast.FnDefinition(ident, args, null)
-    if (ident) subscope.addDeclaration(ident, fndef)
 
     // If there is an ident, this is the scope where we want to add it.
 
-    return fndef
-  } else {
-    return new ast.FnDefinition(ident, args, null)
   }
+
+  return fn
 }
 
 

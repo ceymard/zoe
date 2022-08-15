@@ -3,9 +3,10 @@ import { Range, Ranged } from "parser/range"
 
 export class Node {
   range: Range = new Range()
-  constructor(ranges: Ranged[]) {
-    for (const r of ranges) this.range.extend(r.range)
-  }
+  parent: Node | null = null
+
+  setParent(parent: Node) { this.parent = parent; return this }
+  extendRange(rng?: Ranged | null | undefined) { if(rng) this.range.extend(rng.range); return this }
 
   is<NKls extends new (...a: any[]) => Node>(kls: NKls): this is InstanceType<NKls> {
     return this.constructor === kls
@@ -27,25 +28,22 @@ export class Node {
 export class Statement extends Node { }
 
 export class Declaration extends Statement {
-  constructor(public name: Ident, ...ranges: Ranged[]) { super(ranges) }
+  constructor(public name: Ident, ...ranges: Ranged[]) { super() }
 }
 
 export class Expression extends Statement { }
 
 export class BinOp extends Expression {
-  constructor(public left: Node, public right: Node) {
-    super([left]) // FIXME
-  }
+  left!: Node //!
+  right!: Node //!
 }
 
 export class UnaryOp extends Expression {
-  constructor(public operand: Node) {
-    super([operand])
-  }
+  operand!: Node //!
 }
 
 export class Literal extends Expression {
-  constructor(range: Ranged, public value: string) { super([range]) }
+  value!: string //!!
   isBogus(){ return false }
 }
 
@@ -74,7 +72,8 @@ export const enum IdentKind {
 }
 
 export class Ident extends Literal {
-  constructor(rng: Ranged, value: string, public kind: IdentKind) { super(rng, value) }
+  value = "?"
+  kind: IdentKind = IdentKind.Regular //!!
   isTypeIdent() { return this.kind === IdentKind.Type }
   isTraitIdent() { return this.kind === IdentKind.Trait }
   isBogus() { return this.kind === IdentKind.Bogus }
@@ -131,19 +130,15 @@ export class In extends BinOp { }
 
 
 export class Branch extends Node {
-  constructor(
-    public condition: Node,
-    public then: Node,
-    public otherwise: Node,
-  ) { super([condition, then, otherwise]) }
+  condition!: Node //!
+  then!: Node //!
+  otherwise: Node | null = null //!
 }
 
 // All loops (for, while, do..while) get transformed into Loop
 export class Loop extends Node {
-  constructor(
-    public init: Node,
-    public body: Node[],
-  ) { super([init, ...body]) }
+  init: Node | null = null //!
+  body: Statement | null = null //!
 }
 
 // Templated expressions instanciate their types
@@ -153,38 +148,37 @@ export class TemplatedExpression extends Declaration {
 }
 
 export class ImportAs extends Declaration {
-  constructor(ident: Ident, public path: String, public sub_ident: Ident | null = null) {
-    super(ident, ident, path)
-    if (sub_ident) this.range.extend(sub_ident.range)
-  }
+  ident: Ident = undefined as any //!
+  path: string = undefined as any //!!
+  sub_ident: Ident | null = null //!
+}
+
+export class Scoped extends Statement {
+
 }
 
 export class Block extends Statement {
-  constructor(public statements: Statement[]) { super([...statements]) }
+  statements: Statement[] = [] //!
 }
 
 export class FnDefinition extends Statement {
-  constructor(public ident: Ident | null, public args: Variable[], public body: Statement | null) {
-    const ranges = [...args, ...(body ? [body] : [])]
-    super(ranges, /* ...args */)
-  }
+  ident: Ident | null = null //!
+  args: Variable[] = [] //!
+  body: Block | null = null //!
 }
 
 export class FnDeclaration extends Declaration {
-  extern = false
-  args: Node[] = []
-  constructor(ident: Ident) {
-    super(ident, ident)
-  }
+  extern: boolean = false //!!
+  args: Node[] = [] //!
+  ident!: Ident //!
 }
 
 export class TypeDeclaration extends Declaration {
-  constructor(ident: Ident, public decls: Expression[]) {
-    super(ident, ident)
-  }
+  ident!: Ident //!
+  decls: Expression[] = [] //!
 }
 
 export class Variable extends Declaration {
-  type_expression: Expression | null = null
-  default_expression: Expression | null = null
+  type_expression: Expression | null = null //!
+  default_expression: Expression | null = null //!
 }

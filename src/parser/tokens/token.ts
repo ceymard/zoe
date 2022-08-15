@@ -1,5 +1,5 @@
 import { augment } from "parser/helpers"
-import { Range, Position, Ranged } from "parser/range"
+import { Range, Position } from "parser/range"
 import type { Parser } from "../parser"
 import * as ast from "parser/ast"
 import { Scope } from "parser/ast/scope"
@@ -34,7 +34,7 @@ export class Token {
 
   _unexpected(p: Parser) {
     p.reportError(this.range, `unexpected token ${this.repr()}`)
-    return new ast.Unexpected([this])
+    return new ast.Unexpected().extendRange(this)
   }
 
   // Only tokens expected at the top level need to implement this method,
@@ -75,7 +75,7 @@ export class Token {
   parseVariableDeclaration(p: Parser): ast.Node { return this._unexpected(p) }
 
   isGenericIdent(): this is GenericIdent { return false }
-  toIdent(): ast.Ident { return new ast.Ident(this, "?", ast.IdentKind.Bogus) }
+  toIdent(): ast.Ident { return new ast.Ident().setKind(ast.IdentKind.Bogus).extendRange(this) }
 }
 
 // with an LBP of -1, the token can never be selected in expression() as a led candidate.
@@ -83,7 +83,7 @@ Token.prototype.LBP = -1
 
 export abstract class ValueToken extends Token {
   value: string
-  toIdent(): ast.Ident { return new ast.Ident(this, this.value, ast.IdentKind.Bogus) }
+  toIdent(): ast.Ident { return new ast.Ident().setKind(ast.IdentKind.Bogus).setValue(this.value).extendRange(this) }
   constructor(lex: Parser) {
     super(lex)
     this.value = lex.source.slice(lex.start, lex.offset + 1)
@@ -191,9 +191,9 @@ augment(At, {
   nud(p, sc) {
     let right = p.expression(sc, prio_at + 1)
     if (right.isPotentialComptimeTypeExp() || right.isPotentialTypeIdentExp()) {
-      return new ast.PtrType(right)
+      return new ast.PtrType().setOperand(right)
     }
-    return new ast.PtrReference(right)
+    return new ast.PtrReference().setOperand(right)
   }
 })
 
@@ -221,7 +221,7 @@ export class GenericIdent extends ValueToken {
   kind!: ast.IdentKind
   isGenericIdent(): this is GenericIdent { return this.kind !== ast.IdentKind.Bogus }
   toIdent() {
-    return new ast.Ident(this, this.value, this.kind)
+    return new ast.Ident().setKind(this.kind).setValue(this.value).extendRange(this)
   }
 }
 
@@ -328,13 +328,13 @@ function suffix(unary: new (unary: ast.Node) => ast.UnaryOp) {
   }
 }
 
-function literal(node: new (range: Ranged, value: string) => ast.Literal) {
+function literal(node: new () => ast.Literal) {
   return function _suffix(inst: new (...a: any) => ValueToken) {
     // let _prio = __prio
     augment(inst, {
       // LBP: __prio,
       nud() {
-        const res: ast.Literal = new node(this, this.value)
+        const res: ast.Literal = new node().setValue(this.value).extendRange(this)
         return res
       }
     })
@@ -348,7 +348,7 @@ function ident(kind: ast.IdentKind) {
     augment(inst, {
       // LBP: __prio,
       nud() {
-        const res: ast.Ident = new ast.Ident(this, this.value, kind)
+        const res: ast.Ident = new ast.Ident().setKind(kind).setValue(this.value).extendRange(this)
         return res
       }
     })

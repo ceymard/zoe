@@ -60,6 +60,7 @@ function display_token(token: tk.Token) {
 function obj_renderer(obj: any, indent = 0, pname: string = "") {
   if (!obj) return <div>null</div>
   function prop_renderer(key: string, v: any) {
+    if (key === "parent") return
     if (!(v instanceof a.Node) && !(Array.isArray(v) && v[0] instanceof a.Node)) return null
     return Array.isArray(v) ? v.map((v, i) => obj_renderer(v, indent + 1, key + "[" + i + "]")) : obj_renderer(v, indent + 1, key)
   }

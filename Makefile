@@ -26,5 +26,9 @@ appjs:
 	esbuild $(FLAGS) --platform=browser --sourcemap --outfile=$(BUILD_DIST)/client.js src/webclient/client.tsx
 	echo app.js rebuilt.
 
+generate:
+	esr src/parser/ast/__mkaugments.ts
+
 watch:
+	make generate
 	tsc --build -w | wtsc make -s appjs

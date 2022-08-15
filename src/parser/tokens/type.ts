@@ -24,7 +24,7 @@ augment(tk.Type, {
     }
 
     // we should check if types.length is > 1, in which case we have a tagged union
-    scope.addDeclaration(new ast.TypeDeclaration(id, types))
+    // scope.addDeclaration(new ast.TypeDeclaration(id, types))
 
     // check here if we have template parameters
 
