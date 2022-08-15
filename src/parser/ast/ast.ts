@@ -34,8 +34,8 @@ export class Declaration extends Statement {
 export class Expression extends Statement { }
 
 export class BinOp extends Expression {
-  left!: Node //!
-  right!: Node //!
+  left: Node = undefined as any //!
+  right: Node = undefined as any //!
 }
 
 export class UnaryOp extends Expression {

@@ -287,28 +287,28 @@ function _() {
   return __prio
 }
 
-function binop(binop: new (left: ast.Node, right: ast.Node) => ast.BinOp) {
+function binop(binop: new () => ast.BinOp) {
   return function _binop(inst: new (...a: any) => Token) {
     let _prio = __prio
     augment(inst, {
       LBP: __prio,
       led(p, sc, left) {
         const right = p.expression(sc, _prio + 1)
-        const res = new binop(left, right)
+        const res = new binop().setLeft(left).setRight(right)
         return res
       }
     })
   }
 }
 
-function prefix(unary: new (operand: ast.Node) => ast.UnaryOp) {
+function prefix(unary: new () => ast.UnaryOp) {
   return function _prefix(inst: new (...a: any) => Token) {
     let _prio = __prio
     augment(inst, {
       LBP: __prio,
       nud(p, sc) {
         const right = p.expression(sc, _prio + 1)
-        const res = new unary(right)
+        const res = new unary().setOperand(right)
         return res
       }
     })
