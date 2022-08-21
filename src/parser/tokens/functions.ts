@@ -4,10 +4,9 @@ import * as tk from "./token"
 
 import { parse_templated_arguments } from "./templates"
 import { Parser } from "parser/parser"
-import { Scope } from "parser/ast/scope"
 import { parse_variable_holder } from "./vars"
 
-function parse_function(p: Parser, sc: Scope) {
+function parse_function(p: Parser, sc: ast.Block) {
   const ident = p.consumeIdent() ?? p.consumeIdent(ast.IdentKind.Comptime)
   const tpl = parse_templated_arguments(p)
   const fn = new ast.FnDefinition()
@@ -47,7 +46,7 @@ augment(tk.Fn, {
     if (!fn.ident)
       p.reportError(fn.range, "top level function definitions must be named")
     else {
-      scope.addDeclaration(fn.ident, fn)
+      // scope.addDeclaration(fn.ident, fn)
     }
   },
   nud(p, scope) {

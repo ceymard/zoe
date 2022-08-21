@@ -1,7 +1,6 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode-languageserver"
 import * as ast from "parser/ast"
 import * as tk from "./tokens"
-import { Scope } from "./ast/scope"
 
 function char(str: string) { return str.charCodeAt(0) }
 
@@ -59,6 +58,10 @@ export class Parser {
     return r
   }
 
+  consumeBlock(): ast.Block | null {
+
+  }
+
   consumeIdent(kind = ast.IdentKind.Regular): ast.Ident | null {
     const id = this.next()
     if (!id.isGenericIdent() || id.kind !== kind) {
@@ -87,17 +90,17 @@ export class Parser {
     return this.last
   }
 
-  parseAll(): Scope {
-    const scope = new Scope()
+  parseAll(): ast.Block {
+    const block = new ast.Block()
     while (!this.last || !this.last.isEof()) {
       const tk = this.next()
-      tk.parseTopLevel(this, scope)
+      tk.parseTopLevel(this, block)
     }
     // console.log(res)
-    return scope
+    return block
   }
 
-  expression(scope: Scope, rbp: number): ast.Node {
+  expression(scope: ast.Block, rbp: number): ast.Node {
     let tk = this.next()
     if (tk.isEof()) return tk._unexpected(this)
     let left = tk.nud(this, scope)
@@ -486,13 +489,8 @@ export class Parser {
           return new tk.Comma(this)
 
         // .
-        case C.full_stop: {
-          if (this.source.charCodeAt(this.offset + 1) === C.full_stop && this.source.charCodeAt(this.offset + 2) === C.full_stop) {
-            this.offset += 2
-            return new tk.Elipsis(this)
-          }
+        case C.full_stop:
           return new tk.Dot(this)
-        }
 
         // [
         case C.left_square_bracket:

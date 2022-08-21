@@ -5,8 +5,17 @@ export class Node {
   range: Range = new Range()
   parent: Node | null = null
 
-  setParent(parent: Node) { this.parent = parent; return this }
+  setParent(parent: Node) { parent.extendRange(this); this.parent = parent; return this }
   extendRange(rng?: Ranged | null | undefined) { if(rng) this.range.extend(rng.range); return this }
+
+  registerSymbol(sym: Ident, def: Node) {
+    if (!this.parent) throw new Error(`symbol "${sym}" could not be registered`)
+    this.parent.registerSymbol(sym, def)
+  }
+
+  getSymbol(sym: string): Node | undefined {
+    return this.parent?.getSymbol(sym)
+  }
 
   is<NKls extends new (...a: any[]) => Node>(kls: NKls): this is InstanceType<NKls> {
     return this.constructor === kls
@@ -27,11 +36,33 @@ export class Node {
 
 export class Statement extends Node { }
 
+export class Scope extends Statement {
+
+  sym_map = new Map<string, Node>()
+  statements: Statement[] = [] //!
+
+  getSymbol(symbol: string): Node | undefined {
+    return this.sym_map.get(symbol) ?? this.parent?.getSymbol(symbol)
+  }
+
+  registerSymbol(sym: Ident, def: Node) {
+    if (sym.isBogus()) return // do not add bogus names
+    this.sym_map.set(sym.value, def)
+  }
+
+}
+
 export class Declaration extends Statement {
-  constructor(public name: Ident, ...ranges: Ranged[]) { super() }
+  // constructor(public name: Ident, ...ranges: Ranged[]) { super() }
 }
 
 export class Expression extends Statement { }
+export class Operation extends Expression { }
+
+let __intermediary = 0
+export class IntermediaryResult extends Expression {
+  internal_name = `_tmp_${__intermediary++}`
+}
 
 export class BinOp extends Expression {
   left: Node = undefined as any //!

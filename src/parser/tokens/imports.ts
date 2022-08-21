@@ -12,7 +12,7 @@ augment(tk.Import, {
       const id = p.expect(tk.Ident)
       if (id == null) return
       const aid = id.nudExpectIdent(p, scope)
-      scope.addDeclaration(aid, new ast.ImportAs(aid, path.nudExpectString(p, scope)))
+      // scope.addDeclaration(aid, new ast.ImportAs().setIdent(aid).setPath(path.nudExpectString(p, scope).value))
       return
     }
 
@@ -26,10 +26,18 @@ augment(tk.Import, {
       if (p.consume(tk.As)) {
         const next = p.next()
         const aid2 = next.nudExpect(p, scope, ast.Ident)
-        scope.addDeclaration(aid2, new ast.ImportAs(aid2, path.nudExpectString(p, scope), aid))
+        // scope.addDeclaration(aid2, new ast.ImportAs()
+        //   .setIdent(aid2)
+        //   .setPath(path.nudExpectString(p, scope).value)
+        //   .setSubIdent(aid)
+        // )
       } else {
         // FIXME as
-        scope.addDeclaration(aid, new ast.ImportAs(aid, path.nudExpectString(p, scope), aid))
+      //   scope.addDeclaration(aid, new ast.ImportAs()
+      //     .setIdent(aid)
+      //     .setPath(path.nudExpectString(p, scope).value)
+      //     .setSubIdent(aid)
+      //   )
       }
       // try to eat a comma
       p.consume(tk.Comma)

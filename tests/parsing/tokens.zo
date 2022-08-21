@@ -5,7 +5,7 @@ struct Lexer (
   local pos: Int
 ) {
   fn next() -> ZoeToken { }
-  fn rewind() -> void { }
+  fn rewind() { }
 }
 
 type ZoeToken (
@@ -30,7 +30,7 @@ struct trait #Token (
 ) {
 
   fn new(range: Range) -> This {
-    var tk = This()
+    var tk = This(Range = range)
     tk::Range = range
     return tk
   }

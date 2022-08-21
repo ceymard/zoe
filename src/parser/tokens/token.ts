@@ -2,7 +2,6 @@ import { augment } from "parser/helpers"
 import { Range, Position } from "parser/range"
 import type { Parser } from "../parser"
 import * as ast from "parser/ast"
-import { Scope } from "parser/ast/scope"
 
 export const keywords: { new (...a: any): Token, kw: string }[] = []
 
@@ -39,21 +38,21 @@ export class Token {
 
   // Only tokens expected at the top level need to implement this method,
   // such as import, export, const, var, fn, local, type, struct, enum
-  parseTopLevel(p: Parser, scope: Scope): void {
+  parseTopLevel(p: Parser, block: ast.Block): void {
     this._unexpected(p)
   }
 
   // only const, var, type, fn and trait
-  parseInTypeDecl(p: Parser, scope: Scope): void { }
+  parseInTypeDecl(p: Parser, block: ast.Block): void { }
 
   // Everyone can push code here !
-  parseInCodeBlock(p: Parser, scope: Scope): void { }
+  parseInCodeBlock(p: Parser, block: ast.Block): void { }
 
 
-  nud(p: Parser, sc: Scope): ast.Node { return this._unexpected(p) }
+  nud(p: Parser, block: ast.Block): ast.Node { return this._unexpected(p) }
 
-  nudExpect<T extends ast.Node>(p: Parser, sc: Scope, kls: new (...a: any[]) => T): T {
-    const res = this.nud(p, sc)
+  nudExpect<T extends ast.Node>(p: Parser, block: ast.Block, kls: new (...a: any[]) => T): T {
+    const res = this.nud(p, block)
     if (!(res instanceof kls)) {
       const r = this._unexpected(p)
       // p.rewind()
@@ -61,15 +60,15 @@ export class Token {
     }
     return res as T
   }
-  nudExpectIdent(p: Parser, sc: Scope) {
-    return this.nudExpect(p, sc, ast.Ident)
+  nudExpectIdent(p: Parser, block: ast.Block) {
+    return this.nudExpect(p, block, ast.Ident)
   }
 
-  nudExpectString(p: Parser, sc: Scope) {
-    return this.nudExpect(p, sc, ast.String)
+  nudExpectString(p: Parser, block: ast.Block) {
+    return this.nudExpect(p, block, ast.String)
   }
 
-  led(p: Parser, scope: Scope, left: ast.Node): ast.Node { throw new Error("no led method") }
+  led(p: Parser, block: ast.Block, left: ast.Node): ast.Node { throw new Error("no led method") }
 
   parseStatement(p: Parser): ast.Node { return this._unexpected(p) }
   parseVariableDeclaration(p: Parser): ast.Node { return this._unexpected(p) }

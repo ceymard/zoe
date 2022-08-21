@@ -58,13 +58,13 @@ for (let classname in mp) {
     if (prop.isArray) {
       out.write(`ast.${classname}.prototype.add${cap.slice(0, -1)} = function (value) {\n  this.${prop.name}.push(value)\n`)
       if (prop.isNode) {
-        out.write(`  this.extendRange(value)\n  value.setParent(this)\n`)
+        out.write(`  value.setParent(this)\n`)
       }
       out.write(`  return this\n}\n\n`)
     } else {
       out.write(`ast.${classname}.prototype.set${cap} = function (value) {\n  this.${prop.name} = value\n`)
       if (prop.isNode) {
-        out.write(`  this.extendRange(value)\n  value.setParent(this)\n`)
+        out.write(`  value.setParent(this)\n`)
       }
       out.write(`  return this\n}\n\n`)
     }

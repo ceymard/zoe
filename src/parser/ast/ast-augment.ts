@@ -68,21 +68,18 @@ declare module "./ast" {
 
 ast.BinOp.prototype.setLeft = function (value) {
   this.left = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.BinOp.prototype.setRight = function (value) {
   this.right = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.UnaryOp.prototype.setOperand = function (value) {
   this.operand = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
@@ -99,42 +96,36 @@ ast.Ident.prototype.setKind = function (value) {
 
 ast.Branch.prototype.setCondition = function (value) {
   this.condition = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.Branch.prototype.setThen = function (value) {
   this.then = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.Branch.prototype.setOtherwise = function (value) {
   this.otherwise = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.Loop.prototype.setInit = function (value) {
   this.init = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.Loop.prototype.setBody = function (value) {
   this.body = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.ImportAs.prototype.setIdent = function (value) {
   this.ident = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
@@ -146,35 +137,30 @@ ast.ImportAs.prototype.setPath = function (value) {
 
 ast.ImportAs.prototype.setSubIdent = function (value) {
   this.sub_ident = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.Block.prototype.addStatement = function (value) {
   this.statements.push(value)
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.FnDefinition.prototype.setIdent = function (value) {
   this.ident = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.FnDefinition.prototype.addArg = function (value) {
   this.args.push(value)
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.FnDefinition.prototype.setBody = function (value) {
   this.body = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
@@ -186,42 +172,36 @@ ast.FnDeclaration.prototype.setExtern = function (value) {
 
 ast.FnDeclaration.prototype.addArg = function (value) {
   this.args.push(value)
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.FnDeclaration.prototype.setIdent = function (value) {
   this.ident = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.TypeDeclaration.prototype.setIdent = function (value) {
   this.ident = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.TypeDeclaration.prototype.addDecl = function (value) {
   this.decls.push(value)
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.Variable.prototype.setTypeExpression = function (value) {
   this.type_expression = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }
 
 ast.Variable.prototype.setDefaultExpression = function (value) {
   this.default_expression = value
-  this.extendRange(value)
   value.setParent(this)
   return this
 }

@@ -4,6 +4,10 @@ export class Position implements IPosition {
   public constructor(public line: number, public character: number) { }
 }
 
+export interface Ranged {
+  range: Range
+}
+
 export class Range implements IRange {
 
   constructor(
