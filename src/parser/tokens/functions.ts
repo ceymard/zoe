@@ -1,9 +1,10 @@
-import { augment } from "parser/helpers"
-import * as ast from "parser/ast"
+import { augment } from "src/parser/helpers"
+import * as ast from "src/parser/ast"
+import { Parser } from "src/parser/parser"
+
 import * as tk from "./token"
 
 import { parse_templated_arguments } from "./templates"
-import { Parser } from "parser/parser"
 import { parse_variable_holder } from "./vars"
 
 function parse_function(p: Parser, sc: ast.Block) {

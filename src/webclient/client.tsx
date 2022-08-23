@@ -2,7 +2,7 @@ import { setup_mutation_observer, o, IfResolved, Repeat, $observe, If, } from "e
 import { Button, rule, style, Styling as S, theme, ColorTheme } from "elt-ui"
 import * as tk from "../parser/tokens"
 import { Parser } from "../parser/parser"
-import * as a from "parser/ast"
+import * as a from "src/parser/ast"
 
 // console.log("????")
 let th = ColorTheme.fromColors({

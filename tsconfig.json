@@ -17,7 +17,7 @@
         "jsxFactory": "E",
         "jsxFragmentFactory": "E.Fragment",
         "allowSyntheticDefaultImports": true,
-        "baseUrl": "./src"
+        "baseUrl": "./"
     },
     "include": ["src/**/*"]
 }

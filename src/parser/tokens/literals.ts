@@ -1,6 +1,6 @@
-import { augment } from "parser/helpers"
-import * as tk from "parser/tokens/token"
-import * as ast from "parser/ast"
+import { augment } from "src/parser/helpers"
+import * as tk from "src/parser/tokens/token"
+import * as ast from "src/parser/ast"
 
 augment(tk.ThisType, {
   nud() { return new ast.ThisType().extendRange(this) }

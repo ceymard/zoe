@@ -4,7 +4,7 @@
  *
  */
 
-import { augment } from "parser/helpers"
+import { augment } from "src/parser/helpers"
 import * as ast from "./ast"
 
 augment(ast.ImportAs, {

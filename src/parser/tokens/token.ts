@@ -1,11 +1,11 @@
-import { augment } from "parser/helpers"
-import { Range, Position } from "parser/range"
+import { augment } from "src/parser/helpers"
+import { Range, Position, Ranged } from "src/parser/range"
 import type { Parser } from "../parser"
-import * as ast from "parser/ast"
+import * as ast from "src/parser/ast"
 
 export const keywords: { new (...a: any): Token, kw: string }[] = []
 
-export class Token {
+export class Token extends Ranged {
   LBP!: number
   // The following four fields are filled by the lexer.
   offset: number = 0
@@ -13,6 +13,7 @@ export class Token {
   range: Range
 
   constructor(lex: Parser) {
+    super()
     this.offset = lex.start
     this.length = lex.offset - lex.start
 

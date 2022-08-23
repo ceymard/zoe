@@ -4,8 +4,9 @@ export class Position implements IPosition {
   public constructor(public line: number, public character: number) { }
 }
 
-export interface Ranged {
-  range: Range
+export class Ranged {
+  range: Range = new Range
+  extendRange(rng?: Ranged | null | undefined) { if(rng) this.range.extend(rng.range); return this }
 }
 
 export class Range implements IRange {

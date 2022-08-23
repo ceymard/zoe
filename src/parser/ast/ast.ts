@@ -1,12 +1,10 @@
-import { Range, Ranged } from "parser/range"
+import { Ranged } from "src/parser/range"
 // import * as tk from "parser/tokens"
 
-export class Node {
-  range: Range = new Range()
+export class Node extends Ranged {
   parent: Node | null = null
 
   setParent(parent: Node) { parent.extendRange(this); this.parent = parent; return this }
-  extendRange(rng?: Ranged | null | undefined) { if(rng) this.range.extend(rng.range); return this }
 
   registerSymbol(sym: Ident, def: Node) {
     if (!this.parent) throw new Error(`symbol "${sym}" could not be registered`)

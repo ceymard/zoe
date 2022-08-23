@@ -2,8 +2,8 @@
  *
  */
 
-import { Parser } from "parser/parser"
-import * as ast from "parser/ast"
+import { Parser } from "src/parser/parser"
+import * as ast from "src/parser/ast"
 import * as tk from "./token"
 
 // Parse expressions like [$T #trait#Structrait, $U]

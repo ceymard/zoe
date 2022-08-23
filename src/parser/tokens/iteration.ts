@@ -1,4 +1,4 @@
-import { augment } from "parser/helpers"
+import { augment } from "src/parser/helpers"
 import * as tk from "./token"
 // import * as ast from "parser/ast"
 

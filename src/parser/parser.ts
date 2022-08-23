@@ -1,5 +1,5 @@
 import { Diagnostic, DiagnosticSeverity, Range } from "vscode-languageserver"
-import * as ast from "parser/ast"
+import * as ast from "src/parser/ast"
 import * as tk from "./tokens"
 
 function char(str: string) { return str.charCodeAt(0) }

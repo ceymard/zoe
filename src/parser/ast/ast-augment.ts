@@ -4,6 +4,10 @@ import * as ast from "./ast"
 
 
 declare module "./ast" {
+  interface Scope {
+    addStatement(value: Statement): this
+  }
+
   interface BinOp {
     setLeft(left: Node): this
     setRight(right: Node): this
@@ -64,6 +68,12 @@ declare module "./ast" {
     setDefaultExpression(default_expression: Expression): this
   }
 
+}
+
+ast.Scope.prototype.addStatement = function (value) {
+  this.statements.push(value)
+  value.setParent(this)
+  return this
 }
 
 ast.BinOp.prototype.setLeft = function (value) {

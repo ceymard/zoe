@@ -1,7 +1,7 @@
-import { augment } from "parser/helpers"
-import * as ast from "parser/ast"
+import { augment } from "src/parser/helpers"
+import * as ast from "src/parser/ast"
+import { Parser } from "src/parser/parser"
 import * as tk from "./token"
-import { Parser } from "parser/parser"
 
 // Function called by var, const, but also by fn arguments and struct members
 export function parse_variable_holder(p: Parser, block: ast.Block): ast.Variable {

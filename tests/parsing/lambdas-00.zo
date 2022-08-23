@@ -1,7 +1,24 @@
 // The smallest possible form for a lambda
 var a = fn { return 2 }
+/*
+Return(2)
+*/
 var b = fn () { return 2 }
+/*
+fn %tmp_48594 {
+  %tmp1 = Plus(@a, 2)
+  Return(%tmp1)
+}
+*/
 var c = fn (a: Int) { return a + 2 }
+/*
+fn %tmp_3829(@a: Int, @b: Int)
+  %tmp1 = Plus(@a, @b)
+  Return(%tmp1)
+
+Declare(@c: <unknown_type>)
+Set(@c, %tmp_3829)
+*/
 var d = fn (a: Int, b: Int) { return a + b }
 var e = fn (a: Int, b: Int) -> Int { return a + b }
 // Here we give a name to the function, which is only really useful for debugging purposes
@@ -15,3 +32,10 @@ fn main() {
   // This should work
   something.addCallback(fn { return 2 })
 }
+/*
+fn %main_f99usdfu {
+  %blk1'addr1 {
+    %tmp1 = MethodCall(@something, "addCallback", %tmp_fn_02292819)
+  }
+}
+*/

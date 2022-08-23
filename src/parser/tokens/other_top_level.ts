@@ -1,5 +1,5 @@
-import { augment } from "parser/helpers"
-import * as ast from "parser/ast"
+import { augment } from "src/parser/helpers"
+import * as ast from "src/parser/ast"
 import * as tk from "./token"
 
 augment(tk.Extern, {
