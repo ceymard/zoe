@@ -1,30 +1,40 @@
 // Single comment
 //!pragma stuff
 import "//hello" as hello
-import "./local" ( Type as OtherType )
+from "./local" import Type as OtherType
 
-extern fn some_lib[$T](arg: String, tk: #Trait) -> Result | error {
+/**
+
+*/
+fn some_lib<$T>(arg: String, tk: #Trait): Result | error {
   const a = 1 + 2.3 - 0xbcd * 0b11000 / 0o2372 % 1_000
   var b: SomeType = result("b")
-  if a <= 1 or b >> 2 and c << 1 or d >= e and b == c or d != d {
-    var a = try some.exp[String]()
+  if a <= 1 || b >> 2 && c << 1 || d >= e && b == c || d != d {
+    var a = try some.exp<String>()
     b += 1
   }
   var st = "a{a}b\{and{c}"
 }
-enum A (
-  | val = 1
-  | val2 = 2
-)
 
-struct Str[$T #debug #other_trait, $V](
-  #StructTrait
+enum A (
+  val = 1,
+  val2 = 2
+)
+{
+
+}
+
+
+struct Str<$T #debug #other_trait, $V>(
+  #StructTrait,
   field1: @String
 ) {
 
 }
 
 struct trait #Ho() { }
-trait #hey { }
+trait #hey {
 
-type A = B | C
+}
+
+type A (B | C)

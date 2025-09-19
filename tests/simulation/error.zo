@@ -5,11 +5,11 @@ struct Error (
   parent: @Error
 ) is #Iterable {
 
-  fn #Iterable iterate() -> Iterator[Error] {
+  fn #Iterable iterate() -> Iterator<Error> {
     var something = 2
     (this as #Iterable).doStuff()
   }
-  fn getStack() -> []String {
+  fn getStack() -> Slice<String> {
 
   }
 }

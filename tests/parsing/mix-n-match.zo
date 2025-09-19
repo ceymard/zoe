@@ -1,22 +1,83 @@
-#(
+/*
   Example of file that uses the grammar to the max.
   This file should not produce any errors.
-#)
+*/
 
 import "os" as os
-import "time" ( Date, Duration as Dur )
+from "time" import Date, Duration as Dur
 
-enum Vals (
+type Color = enum (
+  $treble,
+  $diamond,
+  $heart,
+  $spade,
+)
+
+type Card =
+  | type Number = struct(value: Int8, color: Color)
+  | type King = struct(color: Color)
+  | type Queen = struct(color: Color)
+
+type Card2 = struct(value: Card.Value, color: Color) {
+
+  type Color = enum ( $treble, $diamond, $heart, $spade )
+
+  type Value =
+    | Integer on "[1 - 10],(-Inf, 0]"
+    | $king
+    | $queen
+    | $jack
+}
+
+const $ace = Card.Number(1, .$treble)
+
+type Value = enum (
+  val1 = iota,
+  val2,
+  val3,
+) {
+
+}
+
+type Token =
+  | StringToken
+  | NumberToken
+  | OpEqual
+
+type Node =
+  | StringValue
+  | NumberValue
+
+type Vals =
   | val1 = iota
   | val2
   | val
-)
+
 
 const ref = ["Hey", "Ho", "Yo"]
 
-fn main() -> void | error {
+fn main(): void | error {
   const arr = [23, 43, 54, 66]
-  const some_value = do_something_dangerous() else return error.forward("it really didn't work")
+
+  var value: #Node
+
+  // We can't perform an "is" test on traits
+  if value is StringValue {
+
+  } else if value is ForLoop(toto: condition) {
+    print(toto)
+  }
+
+  var to_print = if node
+    as StringValue { node.value }
+    as ForLoop(cond) { cond.node.whatever }
+    else { "!" }
+
+  const some_value = try {
+    do_something_dangerous()
+  } catch (err) {
+    return err.forward("it really didn't work")
+  }
 
   return os.exit(0)
 }

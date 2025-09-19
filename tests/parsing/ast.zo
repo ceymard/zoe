@@ -1,35 +1,40 @@
 
-trait #json[...$args : []String] (
-  fn jsonIter() -> Iterator[jsonValue] { }
+trait #json<...$args : []String> (
+  fn jsonIter(): Iterator<jsonValue> { }
 )
 
-type SomeType = OtherType (
-  is #debug
+type SomeType (
+  #debug
+  OtherType
 )
 
 enum MyDict (
   | Something
   | null
-
+) {
   fn new() { }
-)
+}
 
 struct Position (
+  #json<"line", "character">
+
   line: Int
   character: Int
   offset: Int
+
 ) {
-  #json["line", "character"]
+
 }
 
 struct Range (
+  // Start of method definitions and all...
+  #json<"start", "end">
   start: Position
   end: Position
 ) {
-  fn length(const this) -> Int { return this.end.offset - this.start.offset }
 
-  // Start of method definitions and all...
-  #json["start", "end"]
+  fn length(const this): Int { return this.end.offset - this.start.offset }
+
 }
 
 trait #Ranged (
@@ -39,14 +44,15 @@ trait #Ranged (
 }
 
 import "//lsp" as lsp
-import "//lsp" (#Range)
+from "//lsp" import #Ranged
 
-trait #Node (
+struct trait #Node<$repr: const String = "?"> (
   lsp.#Ranged
 ) {
+
   // In a trait, this is the actual, implementing type
   // $This is an implicit type that refers to the current type being implemented
-  fn new(range: @lsp.Range) -> $This {
+  fn new(range: @lsp.Range): $This {
     // Create
     if ($This.has("")) {
 
@@ -54,30 +60,58 @@ trait #Node (
     return
   }
 
-  fn asValueNode(this) -> #ValueNode | null { return null }
+  fn repr(this): String {
+    return $repr;
+  }
+
+  fn asValueNode(this): #ValueNode | null { return null }
+
 }
 
-trait #ValueNode (
-  #Node
+struct trait #ValueNode<$repr: const String = "?value"> =
+  #Node<$repr>,
   value: String
-) {
-  fn#Node asValueNode(this) { return this }
+{
+  fn#Node<$repr> asValueNode(this) { return This.$name }
 }
 
-trait #BinOpNode (
-  #Node
-  left: #Expression
-  right: #Expression
-) {
-  fn new(left: #Expression, right: #Expression) -> $This {
-    var res = $This(left = left, right = right)
+struct trait #BinOpNode<$repr: const String = "?op?"> =
+  #Node<$repr>,
+
+  #Node.parent: #Node, // Do we impose redefinition of struct traits ?
+  left: #Expression,
+  right: #Expression,
+{
+
+  // No need to keep saying which arguments it was called with as it is not ambiguous
+  fn#Node repr(): String { return "{this.left.repr()}{$repr}{this.right.repr()}" }
+
+  fn new(left: #Expression, right: #Expression): this {
+    var res = This(left = left, right = right)
     res.range.extend(left)
     res.range.extend(right)
     return res
   }
+
 }
 
-struct String (#ValueNode)
-struct Number (#ValueNode)
-struct Mul (#BinOpNode)
-struct Div (#BinOpNode)
+struct String(#ValueNode)
+struct Number(#ValueNode)
+struct Mul(#BinOpNode<"*">)
+struct Div(#BinOpNode<"/">)
+
+type Node #debug =
+  | ValString
+  | ValNumber
+  | ValBoolean
+  | OpMul
+  | OpDiv
+  | OpPlus
+  | OpMinus
+
+type String #ValueNode = struct ()
+type Mul #BinOpNode<"*"> = struct (other_field: String)
+
+type Mul2 = #debug Mul {
+  fn#BinOpNode visit() { /* */ } // We can redefine an existing trait in our new type, or add new ones.
+}

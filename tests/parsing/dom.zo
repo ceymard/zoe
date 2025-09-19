@@ -1,8 +1,8 @@
 
 trait #Node (
-  nextSibling: #Node | null
-  prevSibling: #Node | null
-  parentNode: #ParentNode | null
+  nextSibling: #Node | null,
+  prevSibling: #Node | null,
+  parentNode: #ParentNode | null,
 ) {
 
   fn remove(this) -> void {
@@ -21,8 +21,8 @@ trait #Node (
 
 }
 
-trait #ParentNode (
-  #Node
+struct trait #ParentNode (
+  #Node,
   firstChild: #Node | null
 ) {
   fn removeChild() {
@@ -30,10 +30,8 @@ trait #ParentNode (
   }
 }
 
-struct TextNode (
-  #Node
-)
+struct TextNode (#Node)
+struct Comment (#Node)
+struct CData (#Node)
 
-struct HTMLDivElement (
-  #ParentNode
-)
+struct HTMLDivElement (#ParentNode)

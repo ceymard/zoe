@@ -1,10 +1,32 @@
 fn main() -> Int32 {
+
   fn toto() {  }
   fn toto() {  }
 
   0 + 1 + 2
   5 + 9
-  e = fn (a, b, ) -> String { 33 }
+  var e = fn (a, b, ) -> String { 33 }
+
+  match zobi with {
+
+    #BinOp(left, right) -> {
+
+    },
+
+    #Value(repr) -> {
+
+    },
+
+    ast.String -> {
+      // zobi is ast.String
+    }
+    null -> { }
+  }
+
+  if (zobi is Node(pouet = first_child) && pouet != null) {
+
+  }
 
   for (toto, titi in exp()) { dostuff() }
+
 }

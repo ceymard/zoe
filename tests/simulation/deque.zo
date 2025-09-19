@@ -1,15 +1,15 @@
 /*?
   It is also possible to have a Deque use a classical array
 */
-struct ArrayDeque[$T](
+struct ArrayDeque<$T>(
   head: Int,
   tail: Int,
   local arr: []$T,
 )
-is Iterable[$T]
+is Iterable<$T>
 {
-  fn new(capacity: UInt) -> ArrayDeque[$T] {
-    return ArrayDeque[$T](head = 0, tail = 0, arr = [capacity]$T)
+  fn new(capacity: UInt): ArrayDeque<$T> {
+    return ArrayDeque<$T>(head = 0, tail = 0, arr = [capacity]$T)
   }
 
   /*?
@@ -19,21 +19,30 @@ is Iterable[$T]
 
   }
 
-  fn get(idx: Int) -> ArrayDeque[$T] | OutOfBoundsError {
+  fn get(idx: Int): ArrayDeque<$T> | OutOfBoundsError {
 
   }
-  # ...
+  // ...
 }
 
 /*?
   The Deque is a doubly linked-list which allows for O(1) insertion and retrieval
   of head and tail position elements.
+
+  Problem : how to make it able to hold iso values ?
+  How is Deque[iso[MyData]] able to enforce the fact that it will itself only hold
+  one value.
+
+  iso myvalue {
+    // guarantees that in that block, all values that are created are in the myvalues
+    // iso ?
+  }
 */
-struct Deque[$T](
+struct Deque<$T>(
   head: @Element | null,
   tail: @Element | null,
   count: UInt = 0,
-) is Iterable[$T] {
+) is Iterable<$T> {
 
   struct Element(
     value: $T,
@@ -44,7 +53,7 @@ struct Deque[$T](
   /*?
     The default iterator on the deque
   */
-  #Iterable[$T] fn iterator(this) -> #Iterable.Iterator[$T] {
+  fn #Iterable<$T> iterator(this): #Iterable.Iterator<$T> {
     var iter = this.head
     // Count iterator is more interesting because it allows for creating arrays that do not need to grow
     return #Iterable.countIterator(this.count, while (iter != null) {
@@ -53,7 +62,7 @@ struct Deque[$T](
     })
   }
 
-  fn reverseIterator(this) -> #Iterable.Iterator[$T] {
+  fn reverseIterator(this): #Iterable.Iterator<$T> {
     var iter = this.tail
     return while (iter != null) {
       yield iter.value
@@ -61,7 +70,7 @@ struct Deque[$T](
     }
   }
 
-  local fn _add[$head is Boolean](this, value: $T) -> @This {
+  local fn _add<$head: Boolean>(this, value: $T): @this {
     if (this.head == null) {
       this.head = this.tail = @Element(value)
     } else {
@@ -80,36 +89,38 @@ struct Deque[$T](
     return this
   }
 
-  fn push = _add[false]
-  fn unshift = _add[true]
+  fn push = _add<false>
+  fn unshift = _add<true>
 
   /*?
     Pop a value from the end of the deque
   */
-  fn pop(this) -> $T | null {
+  fn pop(this): $T | null {
     var tail = this.tail
-    if (tail is not null) {
+    if (tail != null) {
       var res = tail.value
       this.tail = tail.prev
       this.tail.next = null
-      if (this.tail is null) this.head = null
+      if (this.tail == null) this.head = null
       this.count--
       return res
     }
     return null
   }
 
-  fn shift(this, value: $T) -> $T | null { stub }
+  fn shift(this, value: $T): $T | null { stub }
 
 }
 
 
 
-struct SqlResult[$T] (
+struct SqlResult<$T> (
   count: UInt,
   request: SqlRequest,
-) {
-  #Iterable fn iterator(this) {
+)
+is #Iterable
+{
+  fn #Iterable iterator(this) {
     return #Iterable.count_iterator(this.count, for (var row in this.iterateRows()) {
 
     })

@@ -1,2 +1,2 @@
 import "std/collections" as col
-import "std/collections" (#compare, Map)
+from "std/collections" import #compare, Map

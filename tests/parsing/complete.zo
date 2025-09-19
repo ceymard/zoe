@@ -13,7 +13,7 @@ import "//module/from/root" as some_module
 // If the path is a directory, the special file __dir__.zo is looked up
 
 // Names may be pulled directly from the import.
-import "collections" ( Dict, Deque, #iterable )
+from "collections" import ( Dict, Deque, #iterable )
 
 /*
   *** Module visibility ***
@@ -32,15 +32,15 @@ import "collections" ( Dict, Deque, #iterable )
   *** Generics ***
 */
 
-type MyType[$A, $B] = // ...
-type MyEnum[$A] (
+type MyType<$A, $B> = // ...
+type MyEnum<$A> (
   | String
   | Int
 ) {
   #debug
 }
 
-struct MyStruct[$T] (
+struct MyStruct<$T> (
   #Node
 
 ) {
@@ -52,14 +52,16 @@ struct MyStruct[$T] (
 
 }
 
-#debug #other_trait #super_trait
+
 struct MyStruct[$T] (
   field: $T
-) {
-  #debug #other_trait #super_trait
+)
+#debug #other_trait #super_trait
+{
+
 }
 
-trait MyTrait[$T] {
+trait MyTrait<$T> {
   fn new() -> this
   fn hasNoImplementation(this, String) -> void
 }
@@ -77,9 +79,11 @@ var something = @other_variable
 var c_var = @*my_value
 
 
-type MyDict[$A] = Dict[$A, String] {
+type MyDict<$A> (Dict<$A, String>)
+#iterable<$A>
+{
 
-  fn #iterable iterator(this) {
+  fn #iterable<$A> iterator(this) {
     return for (var whatever in this) {
 
     }
@@ -91,19 +95,20 @@ type MyDict[$A] = Dict[$A, String] {
 
   fn#other_trait doStuff() -> void { stub }
 
-  fn new(opts: #(param = false, param2: @Struct | null) = #()) -> this {
+  fn new(opts: (param = false, param2: @Struct | null) = ()) -> this {
     opts.param ?= Struct.new(stuff, 3)
   }
   fn debug(this) -> String { stub }
 
-  fn someMethod[$B](this) -> void { return void }
+  fn someMethod<$B>(this) -> void { return void }
 
   fn addOne(this) -> Boolean {
-    var some_variable: iso[String] = iso { "Toto" }
+    var some_variable: iso<String> = iso { "Toto" }
+
     iso some_variable {
       some_variable.pouet = take other_iso
-
     }
+
     return true
   }
 
@@ -114,8 +119,8 @@ type MyDict[$A] = Dict[$A, String] {
   Main function of our program.
 */
 fn main() {
-  var dct = MyDict[String].new()
-  var dct_debug = dct as #debug
+  var dct = MyDict<String>.new()
+  var dct_debug = dct#debug
   dct_debug.debug()
   dct#debug.debug()
 }

@@ -1,2 +1,1 @@
-type T2 =
-  Typ2 | Typ[A, B] | @Trait[A]
+type T2 (Typ2 | Type<A, B> | @#Trait<A>)

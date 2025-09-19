@@ -1,5 +1,5 @@
 
-type Node = struct (
-  value: String
+struct Node (
+  value: String,
   next: Node
 )

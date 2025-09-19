@@ -1,4 +1,4 @@
-import "./ast" (#expression)
+from "./ast" import #expression
 
 struct Lexer (
   filename: String
@@ -26,21 +26,19 @@ type ZoeToken (
 
 
 struct trait #Token (
-  Range
+  range: Range
 ) {
 
   fn new(range: Range) -> This {
-    var tk = This(Range = range)
-    tk::Range = range
-    return tk
+    return This(range = range)
   }
 
   fn nud(const this, lexer: @Lexer) -> #expression {
-    return #expression.unexpected(this::Range)
+    return #expression.unexpected(this#Range)
   }
 
   fn led(const this, lexer: @Lexer, left: #expression) -> #expression {
-    return #expression.unexpected(this::Range)
+    return #expression.unexpected(this#Range)
   }
 }
 

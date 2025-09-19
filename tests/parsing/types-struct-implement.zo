@@ -1,9 +1,11 @@
 
-struct S {
-  field1: String
+struct S (
+  field1: String,
   field2: Int64
+) {
 
   doStuff() -> String {
 
   }
+
 }
